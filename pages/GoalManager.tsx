@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { GoalLevel, Status, Goal } from '../types';
 import { 
@@ -13,15 +13,20 @@ import {
   X,
   Trash2,
   Edit3,
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 
 const GoalManager: React.FC = () => {
-  const { goals, addGoal, updateGoal, deleteGoal } = useStore();
+  const { goals, addGoal, updateGoal, deleteGoal, fetchGoals, loading } = useStore();
   const [selectedLevel, setSelectedLevel] = useState<GoalLevel | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
+
   // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -64,12 +69,12 @@ const GoalManager: React.FC = () => {
     setShowMenuId(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingGoal) {
-      updateGoal(editingGoal.id, formData);
+      await updateGoal(editingGoal.id, formData);
     } else {
-      addGoal(formData);
+      await addGoal(formData);
     }
     setIsModalOpen(false);
   };
@@ -136,115 +141,94 @@ const GoalManager: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
           />
-          {searchTerm && (
-            <button 
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X size={14} />
-            </button>
-          )}
         </div>
       </div>
 
-      <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-        {filteredGoals.map((goal) => (
-          <div key={goal.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-2 rounded-xl ${
-                goal.level === GoalLevel.LONG ? 'bg-purple-100 text-purple-600' :
-                goal.level === GoalLevel.MID ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
-              }`}>
-                <Target size={24} />
+      {loading && goals.length === 0 ? (
+        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+          <Loader2 className="animate-spin mb-4" size={32} />
+          <p>加载中...</p>
+        </div>
+      ) : (
+        <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+          {filteredGoals.map((goal) => (
+            <div key={goal.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
+              <div className="flex justify-between items-start mb-4">
+                <div className={`p-2 rounded-xl ${
+                  goal.level === GoalLevel.LONG ? 'bg-purple-100 text-purple-600' :
+                  goal.level === GoalLevel.MID ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
+                }`}>
+                  <Target size={24} />
+                </div>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowMenuId(showMenuId === goal.id ? null : goal.id)}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                  {showMenuId === goal.id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
+                      <button 
+                        onClick={() => openModal(goal)}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                      >
+                        <Edit3 size={14} /> 编辑
+                      </button>
+                      <button 
+                        onClick={() => { deleteGoal(goal.id); setShowMenuId(null); }}
+                        className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                      >
+                        <Trash2 size={14} /> 删除
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowMenuId(showMenuId === goal.id ? null : goal.id)}
-                  className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
-                >
-                  <MoreVertical size={20} />
-                </button>
-                {showMenuId === goal.id && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
-                    <button 
-                      onClick={() => openModal(goal)}
-                      className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                    >
-                      <Edit3 size={14} /> 编辑
-                    </button>
-                    <button 
-                      onClick={() => { deleteGoal(goal.id); setShowMenuId(null); }}
-                      className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                    >
-                      <Trash2 size={14} /> 删除
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{goal.title}</h3>
-              <p className="text-slate-500 text-sm line-clamp-2 min-h-[2.5rem]">{goal.description}</p>
-            </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{goal.title}</h3>
+                <p className="text-slate-500 text-sm line-clamp-2 min-h-[2.5rem]">{goal.description}</p>
+              </div>
 
-            <div className="mt-6 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">完成进度</span>
-                <span className="text-indigo-600 font-bold">{goal.progress}%</span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-1000 ${
-                    goal.level === GoalLevel.LONG ? 'bg-purple-500' :
-                    goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-between border-t border-slate-50 pt-4">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 overflow-hidden">
-                    <img src={`https://picsum.photos/32?random=${i + 10}`} alt="user" />
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                 <button className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors">
-                  <ArrowRight size={18} />
-                 </button>
+              <div className="mt-6 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">完成进度</span>
+                  <span className="text-indigo-600 font-bold">{goal.progress}%</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${
+                      goal.level === GoalLevel.LONG ? 'bg-purple-500' :
+                      goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${goal.progress}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {filteredGoals.length === 0 && searchTerm && (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-              <Search size={32} />
+          {filteredGoals.length === 0 && searchTerm && (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-400">
+              <Search size={32} className="mb-4" />
+              <p className="font-medium text-lg text-slate-500">未找到匹配的目标</p>
             </div>
-            <p className="font-medium text-lg text-slate-500">未找到匹配的目标</p>
-            <p className="text-sm">尝试更换搜索词或调整层级筛选。</p>
-          </div>
-        )}
+          )}
 
-        {/* 只有在没有搜索或者过滤结果为空且没有搜索词时显示创建占位符 */}
-        {(!searchTerm || filteredGoals.length > 0) && (
-          <div 
-            onClick={() => openModal()}
-            className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 text-slate-400 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer min-h-[300px]"
-          >
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-              <Plus size={24} />
+          {(!searchTerm || filteredGoals.length > 0) && (
+            <div 
+              onClick={() => openModal()}
+              className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 text-slate-400 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer min-h-[300px]"
+            >
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <Plus size={24} />
+              </div>
+              <p className="font-medium">定义新目标</p>
             </div>
-            <p className="font-medium">定义新目标</p>
-            <p className="text-xs text-center mt-1">立足当下，志存高远。</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* 目标表单模态框 */}
       {isModalOpen && (

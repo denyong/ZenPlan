@@ -20,26 +20,43 @@ export enum Status {
 
 export interface Goal {
   id: string;
+  userId: string;
   title: string;
   description: string;
   level: GoalLevel;
   parentId?: string;
   progress: number;
   status: Status;
-  createdAt: string;
   deadline?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Todo {
   id: string;
+  userId: string;
+  goalId?: string;
   title: string;
   description?: string;
-  goalId?: string;
-  dueDate: string;
   priority: Priority;
-  estimatedTime: number; // in minutes
-  completed: boolean;
+  estimatedTime: number; // 分钟
+  isCompleted: boolean;
+  dueDate: string;
   completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyReview {
+  id: string;
+  userId: string;
+  year: number;
+  weekNumber: number;
+  winsContent: string;
+  obstaclesContent: string;
+  nextFocusContent: string;
+  summaryAi?: string;
+  createdAt: string;
 }
 
 export interface StatCompareItem {

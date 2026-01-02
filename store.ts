@@ -1,64 +1,202 @@
 
 import { create } from 'zustand';
-import { Goal, Todo, GoalLevel, Status, Priority } from './types';
+import { Goal, Todo, WeeklyReview, GoalLevel, Status, Priority } from './types';
+import { apiClient } from './services/api';
 
-interface AppState {
-  goals: Goal[];
-  todos: Todo[];
-  addGoal: (goal: Omit<Goal, 'id' | 'createdAt' | 'progress' | 'status'> & { progress?: number }) => void;
-  updateGoal: (id: string, updates: Partial<Goal>) => void;
-  deleteGoal: (id: string) => void;
-  addTodo: (todo: Omit<Todo, 'id' | 'completed'>) => void;
-  toggleTodo: (id: string) => void;
-  updateTodo: (id: string, updates: Partial<Todo>) => void;
-  deleteTodo: (id: string) => void;
+interface User {
+  id: string;
+  username: string;
+  email: string;
 }
 
-// 初始模拟数据 - 中文版
-const initialGoals: Goal[] = [
-  { id: 'g1', title: '成为资深全栈工程师', description: '精通云架构、分布式系统和高级 React 模式', level: GoalLevel.LONG, progress: 35, status: Status.PENDING, createdAt: '2023-01-01' },
-  { id: 'g2', title: '上线个人 SaaS 产品', description: '从 0 到 1 构建并部署一个功能完备的生产力工具', level: GoalLevel.MID, progress: 60, status: Status.PENDING, createdAt: '2023-06-01', parentId: 'g1' },
-  { id: 'g3', title: '掌握 Gemini API 应用', description: '将前沿 AI 能力集成到当前的所有项目中', level: GoalLevel.SHORT, progress: 85, status: Status.PENDING, createdAt: '2024-05-01', parentId: 'g2' },
-];
+interface AppState {
+  user: User | null;
+  token: string | null;
+  goals: Goal[];
+  todos: Todo[];
+  stats: any | null;
+  loading: boolean;
+  error: string | null;
 
-const initialTodos: Todo[] = [
-  { id: 't1', title: '观看 Gemini Pro 1.5 进阶教程', goalId: 'g3', dueDate: new Date().toISOString(), priority: Priority.HIGH, estimatedTime: 45, completed: false },
-  { id: 't2', title: '绘制系统架构拓扑图', goalId: 'g2', dueDate: new Date().toISOString(), priority: Priority.MEDIUM, estimatedTime: 90, completed: true, completedAt: new Date().toISOString() },
-  { id: 't3', title: '配置 Zustand 状态管理库', goalId: 'g2', dueDate: new Date().toISOString(), priority: Priority.HIGH, estimatedTime: 30, completed: false },
-];
+  // Auth Actions
+  login: (email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
+  checkAuth: () => void;
 
-export const useStore = create<AppState>((set) => ({
-  goals: initialGoals,
-  todos: initialTodos,
-  addGoal: (goal) => set((state) => ({
-    goals: [...state.goals, { 
-      id: Math.random().toString(36).substr(2, 9), 
-      createdAt: new Date().toISOString(), 
-      progress: goal.progress || 0, 
-      status: Status.PENDING,
-      description: goal.description,
-      level: goal.level,
-      title: goal.title
-    }]
-  })),
-  updateGoal: (id, updates) => set((state) => ({
-    goals: state.goals.map((g) => g.id === id ? { ...g, ...updates } : g)
-  })),
-  deleteGoal: (id) => set((state) => ({
-    goals: state.goals.filter((g) => g.id !== id),
-    // 删除目标时可选处理：也将关联的待办事项的 goalId 置空
-    todos: state.todos.map(t => t.goalId === id ? { ...t, goalId: undefined } : t)
-  })),
-  addTodo: (todo) => set((state) => ({
-    todos: [...state.todos, { ...todo, id: Math.random().toString(36).substr(2, 9), completed: false }]
-  })),
-  toggleTodo: (id) => set((state) => ({
-    todos: state.todos.map((t) => t.id === id ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : undefined } : t)
-  })),
-  updateTodo: (id, updates) => set((state) => ({
-    todos: state.todos.map((t) => t.id === id ? { ...t, ...updates } : t)
-  })),
-  deleteTodo: (id) => set((state) => ({
-    todos: state.todos.filter((t) => t.id !== id)
-  })),
+  // Goal Actions
+  fetchGoals: (filters?: any) => Promise<void>;
+  addGoal: (goal: Partial<Goal>) => Promise<void>;
+  updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+
+  // Todo Actions
+  fetchTodos: (filters?: any) => Promise<void>;
+  addTodo: (todo: Partial<Todo>) => Promise<void>;
+  toggleTodo: (id: string) => Promise<void>;
+  updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>;
+  deleteTodo: (id: string) => Promise<void>;
+
+  // Stats Actions
+  fetchStats: () => Promise<void>;
+}
+
+export const useStore = create<AppState>((set, get) => ({
+  user: null,
+  token: null,
+  goals: [],
+  todos: [],
+  stats: null,
+  loading: false,
+  error: null,
+
+  checkAuth: () => {
+    const token = localStorage.getItem('zenplan_token');
+    const userStr = localStorage.getItem('zenplan_user');
+    if (token && userStr) {
+      set({ token, user: JSON.parse(userStr) });
+    }
+  },
+
+  login: async (email, password) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await apiClient('/api/v1/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      const { token, user } = res.data;
+      localStorage.setItem('zenplan_token', token);
+      localStorage.setItem('zenplan_user', JSON.stringify(user));
+      set({ token, user, loading: false });
+    } catch (err: any) {
+      set({ error: err.message, loading: false });
+      throw err;
+    }
+  },
+
+  register: async (username, email, password) => {
+    set({ loading: true, error: null });
+    try {
+      await apiClient('/api/v1/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, email, password }),
+      });
+      set({ loading: false });
+    } catch (err: any) {
+      set({ error: err.message, loading: false });
+      throw err;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('zenplan_token');
+    localStorage.removeItem('zenplan_user');
+    set({ user: null, token: null, goals: [], todos: [], stats: null });
+  },
+
+  fetchGoals: async (filters) => {
+    set({ loading: true });
+    try {
+      const res = await apiClient('/api/v1/goals', { params: filters });
+      set({ goals: res.data || [], loading: false });
+    } catch (err: any) {
+      set({ error: err.message, loading: false });
+    }
+  },
+
+  addGoal: async (goal) => {
+    try {
+      await apiClient('/api/v1/goals', {
+        method: 'POST',
+        body: JSON.stringify(goal),
+      });
+      get().fetchGoals();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  updateGoal: async (id, updates) => {
+    try {
+      await apiClient(`/api/v1/goals/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      get().fetchGoals();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  deleteGoal: async (id) => {
+    try {
+      await apiClient(`/api/v1/goals/${id}`, { method: 'DELETE' });
+      get().fetchGoals();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  fetchTodos: async (filters) => {
+    set({ loading: true });
+    try {
+      // Assuming GET /todos based on docs
+      const res = await apiClient('/api/v1/todos', { params: filters });
+      set({ todos: res.data || [], loading: false });
+    } catch (err: any) {
+      set({ error: err.message, loading: false });
+    }
+  },
+
+  addTodo: async (todo) => {
+    try {
+      await apiClient('/api/v1/todos', {
+        method: 'POST',
+        body: JSON.stringify(todo),
+      });
+      get().fetchTodos();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  toggleTodo: async (id) => {
+    try {
+      await apiClient(`/api/v1/todos/${id}/toggle`, { method: 'PATCH' });
+      get().fetchTodos();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  updateTodo: async (id, updates) => {
+    try {
+      await apiClient(`/api/v1/todos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      get().fetchTodos();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  deleteTodo: async (id) => {
+    try {
+      await apiClient(`/api/v1/todos/${id}`, { method: 'DELETE' });
+      get().fetchTodos();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  fetchStats: async () => {
+    try {
+      const res = await apiClient('/api/v1/stats/dashboard/summary');
+      set({ stats: res.data });
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
 }));

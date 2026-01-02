@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Target, 
@@ -9,13 +9,16 @@ import {
   Settings, 
   Calendar,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
+import { useStore } from './store';
 import Dashboard from './pages/Dashboard';
 import GoalManager from './pages/GoalManager';
 import TodoList from './pages/TodoList';
 import Statistics from './pages/Statistics';
 import Review from './pages/Review';
+import Auth from './pages/Auth';
 
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
   <Link
@@ -34,6 +37,7 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { user, logout } = useStore();
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
@@ -66,12 +70,19 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </nav>
 
           <div className="p-4 border-t border-slate-100">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-              <img src="https://picsum.photos/40" alt="Avatar" className="w-10 h-10 rounded-full border-2 border-indigo-100" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 relative group">
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'user'}`} alt="Avatar" className="w-10 h-10 rounded-full border-2 border-indigo-100" />
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-semibold truncate">Alex Rivera</p>
+                <p className="text-sm font-semibold truncate">{user?.username || 'Guest'}</p>
                 <p className="text-xs text-slate-500 truncate">高级会员</p>
               </div>
+              <button 
+                onClick={logout}
+                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors ml-auto"
+                title="注销"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
         </div>
@@ -91,7 +102,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* 已移除：搜索框、通知图标、新目标按钮 */}
+              {/* Optional header items */}
             </div>
           </div>
         </header>
@@ -105,19 +116,43 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { token } = useStore();
+  if (!token) {
+    return <Navigate to="/auth" replace />;
+  }
+  return <>{children}</>;
+};
+
 const App: React.FC = () => {
+  const { checkAuth } = useStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <Router>
-      <AppLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/goals" element={<GoalManager />} />
-          <Route path="/todos" element={<TodoList />} />
-          <Route path="/stats" element={<Statistics />} />
-          <Route path="/review" element={<Review />} />
-          <Route path="*" element={<div className="flex items-center justify-center h-96 text-slate-400">页面开发中...</div>} />
-        </Routes>
-      </AppLayout>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route 
+          path="/*" 
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/goals" element={<GoalManager />} />
+                  <Route path="/todos" element={<TodoList />} />
+                  <Route path="/stats" element={<Statistics />} />
+                  <Route path="/review" element={<Review />} />
+                  <Route path="*" element={<div className="flex items-center justify-center h-96 text-slate-400 font-bold">页面开发中...</div>} />
+                </Routes>
+              </AppLayout>
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
     </Router>
   );
 };

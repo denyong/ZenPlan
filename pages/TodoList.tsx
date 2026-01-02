@@ -1,14 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Priority, Status, Todo } from '../types';
+import { Priority, Todo } from '../types';
 import { 
   CheckCircle2, 
-  Circle, 
   Clock, 
   Flag, 
   Plus, 
-  Filter, 
   Search,
   Calendar,
   MoreVertical,
@@ -16,13 +14,20 @@ import {
   CalendarDays,
   Target,
   X,
-  Edit3
+  Edit3,
+  AlignLeft,
+  Loader2
 } from 'lucide-react';
 
 const TodoList: React.FC = () => {
-  const { todos, goals, toggleTodo, deleteTodo, addTodo, updateTodo } = useStore();
+  const { todos, goals, toggleTodo, deleteTodo, addTodo, updateTodo, fetchTodos, fetchGoals, loading } = useStore();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetchTodos();
+    fetchGoals();
+  }, [fetchTodos, fetchGoals]);
 
   // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +37,7 @@ const TodoList: React.FC = () => {
   // 表单状态
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     goalId: '',
     dueDate: new Date().toISOString().split('T')[0],
     priority: Priority.MEDIUM,
@@ -39,8 +45,9 @@ const TodoList: React.FC = () => {
   });
 
   const filteredTodos = todos.filter(t => {
-    const matchesFilter = filter === 'all' || (filter === 'pending' && !t.completed) || (filter === 'completed' && t.completed);
-    const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'all' || (filter === 'pending' && !t.isCompleted) || (filter === 'completed' && t.isCompleted);
+    const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
+                         (t.description?.toLowerCase().includes(search.toLowerCase()) || false);
     return matchesFilter && matchesSearch;
   });
 
@@ -62,6 +69,7 @@ const TodoList: React.FC = () => {
       setEditingTodo(todo);
       setFormData({
         title: todo.title,
+        description: todo.description || '',
         goalId: todo.goalId || '',
         dueDate: new Date(todo.dueDate).toISOString().split('T')[0],
         priority: todo.priority,
@@ -71,6 +79,7 @@ const TodoList: React.FC = () => {
       setEditingTodo(null);
       setFormData({
         title: '',
+        description: '',
         goalId: '',
         dueDate: new Date().toISOString().split('T')[0],
         priority: Priority.MEDIUM,
@@ -81,16 +90,16 @@ const TodoList: React.FC = () => {
     setShowMenuId(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
       ...formData,
       dueDate: new Date(formData.dueDate).toISOString()
     };
     if (editingTodo) {
-      updateTodo(editingTodo.id, payload);
+      await updateTodo(editingTodo.id, payload);
     } else {
-      addTodo(payload);
+      await addTodo(payload);
     }
     setIsModalOpen(false);
   };
@@ -104,17 +113,17 @@ const TodoList: React.FC = () => {
         </div>
         <button 
           onClick={() => openModal()}
-          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-100"
+          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-200"
         >
           <Plus size={20} />
           添加任务
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         {/* 控制区 */}
-        <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 p-1 bg-slate-50 rounded-lg">
+        <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
             {[
               { id: 'all', label: '全部' },
               { id: 'pending', label: '待处理' },
@@ -123,7 +132,7 @@ const TodoList: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id as any)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${
                   filter === f.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -132,68 +141,68 @@ const TodoList: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex items-center gap-4 flex-1 sm:flex-initial">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="text" 
-                placeholder="搜索任务..." 
+                placeholder="搜索任务或备注..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full sm:w-64"
+                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full sm:w-64"
               />
             </div>
-            <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors border border-slate-200 rounded-lg" title="筛选">
-              <Filter size={18} />
-            </button>
           </div>
         </div>
 
         {/* 列表区 */}
         <div className="divide-y divide-slate-50">
-          {filteredTodos.map((todo) => (
-            <div key={todo.id} className="group px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-all">
+          {loading && todos.length === 0 ? (
+            <div className="py-20 flex justify-center">
+              <Loader2 className="animate-spin text-indigo-600" size={32} />
+            </div>
+          ) : filteredTodos.map((todo) => (
+            <div key={todo.id} className="group px-6 py-5 flex items-center gap-5 hover:bg-slate-50 transition-all">
               <button 
                 onClick={() => toggleTodo(todo.id)}
                 className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                  todo.completed 
+                  todo.isCompleted 
                     ? 'bg-indigo-600 border-indigo-600 text-white' 
                     : 'border-slate-300 group-hover:border-indigo-400'
                 }`}
               >
-                {todo.completed && <CheckCircle2 size={16} />}
+                {todo.isCompleted && <CheckCircle2 size={16} />}
               </button>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className={`font-semibold truncate ${todo.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                  <h4 className={`font-bold text-lg truncate ${todo.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                     {todo.title}
                   </h4>
-                  {todo.priority === Priority.HIGH && (
-                    <Flag size={14} className="text-rose-500 fill-rose-500" />
-                  )}
                 </div>
                 
-                <div className="flex items-center gap-4 mt-1">
+                {todo.description && (
+                  <p className={`text-sm mt-1 line-clamp-1 ${todo.isCompleted ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {todo.description}
+                  </p>
+                )}
+                
+                <div className="flex items-center gap-4 mt-2">
                   {getGoalTitle(todo.goalId) && (
-                    <div className="flex items-center gap-1 text-xs text-indigo-500 font-medium bg-indigo-50 px-2 py-0.5 rounded">
+                    <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">
                       <Target size={12} />
                       {getGoalTitle(todo.goalId)}
                     </div>
                   )}
-                  <div className="flex items-center gap-1 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <Calendar size={12} />
-                    {new Date(todo.dueDate).toLocaleDateString('zh-CN')}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-slate-400">
-                    <Clock size={12} />
-                    {todo.estimatedTime} 分钟
+                    {new Date(todo.dueDate).toLocaleDateString()}
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className={`hidden md:block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getPriorityColor(todo.priority)}`}>
+                <div className={`hidden md:block px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${getPriorityColor(todo.priority)}`}>
                   {todo.priority === Priority.HIGH ? '紧急' : todo.priority === Priority.MEDIUM ? '中等' : '普通'}
                 </div>
                 
@@ -205,18 +214,18 @@ const TodoList: React.FC = () => {
                     <MoreVertical size={20} />
                   </button>
                   {showMenuId === todo.id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
+                    <div className="absolute right-0 mt-2 w-36 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
                       <button 
                         onClick={() => openModal(todo)}
-                        className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                        className="w-full px-5 py-2.5 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
                       >
-                        <Edit3 size={14} /> 编辑
+                        <Edit3 size={16} /> 编辑
                       </button>
                       <button 
                         onClick={() => { deleteTodo(todo.id); setShowMenuId(null); }}
-                        className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                        className="w-full px-5 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
                       >
-                        <Trash2 size={14} /> 删除
+                        <Trash2 size={16} /> 删除
                       </button>
                     </div>
                   )}
@@ -225,56 +234,46 @@ const TodoList: React.FC = () => {
             </div>
           ))}
 
-          {filteredTodos.length === 0 && (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                <CalendarDays size={32} />
-              </div>
-              <p className="font-medium text-lg text-slate-500">未找到相关任务</p>
-              <p className="text-sm">保持专注，或者调整你的筛选条件。</p>
+          {filteredTodos.length === 0 && !loading && (
+            <div className="py-24 flex flex-col items-center justify-center text-slate-400">
+              <CalendarDays size={40} className="mb-4" />
+              <p className="font-bold text-xl text-slate-500">空空如也</p>
             </div>
           )}
-        </div>
-
-        {/* 页脚信息 */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 flex justify-between">
-          <span>共计 {filteredTodos.length} 项</span>
-          <span>实时同步中</span>
         </div>
       </div>
 
       {/* 待办事项模态框 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-900">{editingTodo ? '编辑任务' : '添加新任务'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h2 className="text-xl font-bold text-slate-900">{editingTodo ? '编辑任务详情' : '定义新任务'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-full shadow-sm transition-colors">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-8 space-y-5">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">任务内容</label>
+                <label className="text-sm font-bold text-slate-700 ml-1">任务名称</label>
                 <input 
                   required
                   type="text" 
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
-                  placeholder="你想完成什么？"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">关联目标 (可选)</label>
+                <label className="text-sm font-bold text-slate-700 ml-1">关联战略目标</label>
                 <select 
                   value={formData.goalId}
                   onChange={e => setFormData({...formData, goalId: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                 >
-                  <option value="">不关联目标</option>
+                  <option value="">独立任务 (不关联目标)</option>
                   {goals.map(g => (
                     <option key={g.id} value={g.id}>{g.title}</option>
                   ))}
@@ -283,37 +282,37 @@ const TodoList: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">截止日期</label>
+                  <label className="text-sm font-bold text-slate-700 ml-1">截止日期</label>
                   <input 
                     type="date" 
                     value={formData.dueDate}
                     onChange={e => setFormData({...formData, dueDate: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">预计耗时 (分钟)</label>
+                  <label className="text-sm font-bold text-slate-700 ml-1">预计耗时 (分)</label>
                   <input 
                     type="number" 
                     value={formData.estimatedTime}
                     onChange={e => setFormData({...formData, estimatedTime: parseInt(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">优先级</label>
+                <label className="text-sm font-bold text-slate-700 ml-1">紧急程度</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[Priority.LOW, Priority.MEDIUM, Priority.HIGH].map(p => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setFormData({...formData, priority: p})}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                      className={`py-3 px-4 rounded-2xl text-[10px] font-extrabold uppercase tracking-widest border transition-all ${
                         formData.priority === p 
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-300'
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' 
+                          : 'bg-slate-50 border-slate-200 text-slate-500'
                       }`}
                     >
                       {p === Priority.HIGH ? '紧急' : p === Priority.MEDIUM ? '中等' : '普通'}
@@ -322,9 +321,9 @@ const TodoList: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-4">
-                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
-                  {editingTodo ? '保存修改' : '确认添加'}
+              <div className="pt-6">
+                <button type="submit" className="w-full py-4.5 bg-indigo-600 text-white rounded-[20px] font-bold text-lg">
+                  {editingTodo ? '保存修改' : '确认添加任务'}
                 </button>
               </div>
             </form>
