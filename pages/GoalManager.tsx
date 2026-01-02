@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../store';
-import { GoalLevel, Status, Goal } from '../types';
+import { useStore } from '../store.ts';
+import { GoalLevel, Status, Goal } from '../types.ts';
 import { 
   Target, 
   MoreVertical, 
@@ -27,12 +27,10 @@ const GoalManager: React.FC = () => {
     fetchGoals();
   }, [fetchGoals]);
 
-  // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
 
-  // 表单状态
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -113,7 +111,6 @@ const GoalManager: React.FC = () => {
         </div>
       </div>
 
-      {/* 选项卡与搜索栏 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200">
         <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar no-scrollbar">
           {(['all', GoalLevel.LONG, GoalLevel.MID, GoalLevel.SHORT] as const).map((level) => (
@@ -230,7 +227,6 @@ const GoalManager: React.FC = () => {
         </div>
       )}
 
-      {/* 目标表单模态框 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>

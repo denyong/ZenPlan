@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
-import { Goal, Todo, WeeklyReview, GoalLevel, Status, Priority, User } from './types';
-import { apiClient } from './services/api';
+import { Goal, Todo, WeeklyReview, GoalLevel, Status, Priority, User } from './types.ts';
+import { apiClient } from './services/api.ts';
 
 interface AppState {
   user: User | null;
@@ -74,7 +74,6 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ email, password }),
       });
       
-      // 根据提供的 JSON 结构解析
       const { token, user } = res.data;
       
       if (!token) throw new Error("响应中缺少有效 Token");

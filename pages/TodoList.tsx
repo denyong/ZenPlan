@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../store';
-import { Priority, Todo } from '../types';
+import { useStore } from '../store.ts';
+import { Priority, Todo } from '../types.ts';
 import { 
   CheckCircle2, 
   Clock, 
@@ -29,12 +29,10 @@ const TodoList: React.FC = () => {
     fetchGoals();
   }, [fetchTodos, fetchGoals]);
 
-  // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
 
-  // 表单状态
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -121,7 +119,6 @@ const TodoList: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        {/* 控制区 */}
         <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
             {[
@@ -155,7 +152,6 @@ const TodoList: React.FC = () => {
           </div>
         </div>
 
-        {/* 列表区 */}
         <div className="divide-y divide-slate-50">
           {loading && todos.length === 0 ? (
             <div className="py-20 flex justify-center">
@@ -243,7 +239,6 @@ const TodoList: React.FC = () => {
         </div>
       </div>
 
-      {/* 待办事项模态框 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
@@ -322,7 +317,7 @@ const TodoList: React.FC = () => {
               </div>
 
               <div className="pt-6">
-                <button type="submit" className="w-full py-4.5 bg-indigo-600 text-white rounded-[20px] font-bold text-lg">
+                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[20px] font-bold text-lg">
                   {editingTodo ? '保存修改' : '确认添加任务'}
                 </button>
               </div>

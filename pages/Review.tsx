@@ -1,12 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { useStore } from '../store';
+import { useStore } from '../store.ts';
 import { CheckCircle, Calendar, MessageSquare, Sparkles, Send } from 'lucide-react';
 
 const Review: React.FC = () => {
   const { todos, saveReview } = useStore();
 
-  // 计算当前周
   const currentInfo = useMemo(() => {
     const now = new Date();
     const target = new Date(now.valueOf());

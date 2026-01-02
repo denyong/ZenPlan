@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../store';
-import { Priority, Status } from '../types';
-import { analyzeTaskPatterns } from '../geminiService';
+import { useStore } from '../store.ts';
+import { Priority, Status } from '../types.ts';
+import { analyzeTaskPatterns } from '../geminiService.ts';
 import { 
   BrainCircuit, 
   Sparkles, 
@@ -58,12 +58,6 @@ const TaskAnalysis: React.FC = () => {
     { subject: '紧迫感', A: (todos.filter(t => t.priority === Priority.HIGH).length / (todos.length || 1)) * 100, fullMark: 100 },
     { subject: '专注度', A: 85, fullMark: 100 },
     { subject: '预估准度', A: 70, fullMark: 100 },
-  ];
-
-  const priorityDistribution = [
-    { name: '紧急', value: todos.filter(t => t.priority === Priority.HIGH).length, color: '#f43f5e' },
-    { name: '中等', value: todos.filter(t => t.priority === Priority.MEDIUM).length, color: '#f59e0b' },
-    { name: '普通', value: todos.filter(t => t.priority === Priority.LOW).length, color: '#10b981' },
   ];
 
   return (
