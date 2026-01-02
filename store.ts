@@ -37,6 +37,9 @@ interface AppState {
   updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
 
+  // Review Actions
+  saveReview: (review: Partial<WeeklyReview>) => Promise<void>;
+
   // Stats Actions
   fetchStats: () => Promise<void>;
 }
@@ -51,10 +54,16 @@ export const useStore = create<AppState>((set, get) => ({
   error: null,
 
   checkAuth: () => {
-    const token = localStorage.getItem('zenplan_token');
-    const userStr = localStorage.getItem('zenplan_user');
-    if (token && userStr) {
-      set({ token, user: JSON.parse(userStr) });
+    try {
+      const token = localStorage.getItem('zenplan_token');
+      const userStr = localStorage.getItem('zenplan_user');
+      if (token && userStr && userStr !== "undefined") {
+        set({ token, user: JSON.parse(userStr) });
+      }
+    } catch (e) {
+      console.error("Auth check failed", e);
+      localStorage.removeItem('zenplan_token');
+      localStorage.removeItem('zenplan_user');
     }
   },
 
@@ -141,7 +150,6 @@ export const useStore = create<AppState>((set, get) => ({
   fetchTodos: async (filters) => {
     set({ loading: true });
     try {
-      // Assuming GET /todos based on docs
       const res = await apiClient('/api/v1/todos', { params: filters });
       set({ todos: res.data || [], loading: false });
     } catch (err: any) {
@@ -186,6 +194,17 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       await apiClient(`/api/v1/todos/${id}`, { method: 'DELETE' });
       get().fetchTodos();
+    } catch (err: any) {
+      set({ error: err.message });
+    }
+  },
+
+  saveReview: async (review) => {
+    try {
+      await apiClient('/api/v1/reviews', {
+        method: 'POST',
+        body: JSON.stringify(review),
+      });
     } catch (err: any) {
       set({ error: err.message });
     }

@@ -29,11 +29,10 @@ const TaskAnalysis: React.FC = () => {
   const performAnalysis = async () => {
     setLoading(true);
     try {
-      // 仅发送必要的任务字段以节省 Token
       const simplifiedTodos = todos.map(t => ({
         title: t.title,
         priority: t.priority,
-        completed: t.completed,
+        isCompleted: t.isCompleted,
         estimatedTime: t.estimatedTime,
         dueDate: t.dueDate
       }));
@@ -51,15 +50,14 @@ const TaskAnalysis: React.FC = () => {
     if (todos.length > 0 && !aiAnalysis) {
       performAnalysis();
     }
-  }, [todos]);
+  }, [todos, aiAnalysis]);
 
-  // 计算雷达图数据（效能维度）
   const radarData = [
-    { subject: '执行力', A: (todos.filter(t => t.completed).length / (todos.length || 1)) * 100, fullMark: 100 },
+    { subject: '执行力', A: (todos.filter(t => t.isCompleted).length / (todos.length || 1)) * 100, fullMark: 100 },
     { subject: '规划感', A: (todos.filter(t => t.goalId).length / (todos.length || 1)) * 100, fullMark: 100 },
     { subject: '紧迫感', A: (todos.filter(t => t.priority === Priority.HIGH).length / (todos.length || 1)) * 100, fullMark: 100 },
-    { subject: '专注度', A: 85, fullMark: 100 }, // 模拟数据
-    { subject: '预估准度', A: 70, fullMark: 100 }, // 模拟数据
+    { subject: '专注度', A: 85, fullMark: 100 },
+    { subject: '预估准度', A: 70, fullMark: 100 },
   ];
 
   const priorityDistribution = [
@@ -89,7 +87,6 @@ const TaskAnalysis: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 效能雷达图 */}
         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-bold mb-6 w-full flex items-center gap-2">
             <TrendingUp size={20} className="text-indigo-600" />
@@ -101,14 +98,14 @@ const TaskAnalysis: React.FC = () => {
                 <PolarGrid stroke="#e2e8f0" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12 }} />
                 <Radar
-                  name="Alex"
+                  name="User"
                   dataKey="A"
                   stroke="#6366f1"
                   strokeWidth={3}
                   fill="#6366f1"
                   fillOpacity={0.3}
                 />
-              </BarChart>
+              </RadarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-center">
@@ -116,7 +113,6 @@ const TaskAnalysis: React.FC = () => {
           </div>
         </div>
 
-        {/* AI 诊断报告 */}
         <div className="lg:col-span-2 bg-indigo-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <BrainCircuit size={120} />
@@ -132,7 +128,6 @@ const TaskAnalysis: React.FC = () => {
                 <div className="h-4 bg-white/10 rounded w-3/4 animate-pulse"></div>
                 <div className="h-4 bg-white/10 rounded w-1/2 animate-pulse"></div>
                 <div className="h-4 bg-white/10 rounded w-5/6 animate-pulse"></div>
-                <p className="text-indigo-200 text-sm animate-pulse italic">ZenAI 正在深度扫描您的任务列表，寻找改进空间...</p>
               </div>
             ) : (
               <div className="prose prose-invert max-w-none">
@@ -143,145 +138,6 @@ const TaskAnalysis: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {!loading && aiAnalysis && (
-              <div className="flex flex-wrap gap-3 pt-4">
-                <div className="flex items-center gap-2 bg-emerald-500/20 px-4 py-2 rounded-xl text-emerald-300 text-sm border border-emerald-500/30">
-                  <Lightbulb size={16} />
-                  <span>建议增加短期目标关联</span>
-                </div>
-                <div className="flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-xl text-amber-300 text-sm border border-amber-500/30">
-                  <AlertTriangle size={16} />
-                  <span>高优先级任务积压</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* 统计指标卡片 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-              <AlertTriangle size={20} />
-            </div>
-            <span className="text-sm font-semibold text-slate-500">逾期风险</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <span className="text-2xl font-bold">12%</span>
-            <span className="text-xs text-rose-500 mb-1">↑ 2% 较上周</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <Clock size={20} />
-            </div>
-            <span className="text-sm font-semibold text-slate-500">预估偏差</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <span className="text-2xl font-bold">+18m</span>
-            <span className="text-xs text-emerald-500 mb-1">↓ 5m 较上周</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Target size={20} />
-            </div>
-            <span className="text-sm font-semibold text-slate-500">目标覆盖率</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <span className="text-2xl font-bold">68%</span>
-            <span className="text-xs text-blue-500 mb-1">稳定</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <BarChart3 size={20} />
-            </div>
-            <span className="text-sm font-semibold text-slate-500">投入密度</span>
-          </div>
-          <div className="flex items-end justify-between">
-            <span className="text-2xl font-bold">4.2h</span>
-            <span className="text-xs text-slate-400 mb-1">日均任务耗时</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 优先级占比图 */}
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold mb-8">任务负载分布 (按优先级)</h3>
-          <div className="h-64 flex flex-col md:flex-row items-center gap-8">
-            <div className="w-full h-full flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={priorityDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={8}
-                    dataKey="value"
-                  >
-                    {priorityDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-4 w-full md:w-48">
-              {priorityDistribution.map((p, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }}></div>
-                    <span className="text-sm text-slate-600">{p.name}</span>
-                  </div>
-                  <span className="text-sm font-bold">{p.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 任务建议卡片 */}
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold mb-6">接下来的行动建议</h3>
-          <div className="space-y-4">
-            <div className="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
-                  <Target size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 group-hover:text-indigo-600">关联未标记任务</h4>
-                  <p className="text-xs text-slate-500">你有 5 项任务未关联任何目标，建议进行归类。</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-slate-300 group-hover:text-indigo-600" />
-            </div>
-            <div className="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-rose-50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-rose-100 text-rose-600 rounded-xl">
-                  <Clock size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 group-hover:text-rose-600">处理逾期风险</h4>
-                  <p className="text-xs text-slate-500">“绘制系统架构”任务已临近截止日期，建议今日优先处理。</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-slate-300 group-hover:text-rose-600" />
-            </div>
           </div>
         </div>
       </div>
