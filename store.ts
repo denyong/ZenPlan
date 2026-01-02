@@ -1,13 +1,7 @@
 
 import { create } from 'zustand';
-import { Goal, Todo, WeeklyReview, GoalLevel, Status, Priority } from './types';
+import { Goal, Todo, WeeklyReview, GoalLevel, Status, Priority, User } from './types';
 import { apiClient } from './services/api';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
 
 interface AppState {
   user: User | null;
@@ -23,6 +17,7 @@ interface AppState {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
+  setApiUrl: (url: string) => void;
 
   // Goal Actions
   fetchGoals: (filters?: any) => Promise<void>;
@@ -53,6 +48,10 @@ export const useStore = create<AppState>((set, get) => ({
   loading: false,
   error: null,
 
+  setApiUrl: (url: string) => {
+    localStorage.setItem('zenplan_api_url', url);
+  },
+
   checkAuth: () => {
     try {
       const token = localStorage.getItem('zenplan_token');
@@ -74,7 +73,12 @@ export const useStore = create<AppState>((set, get) => ({
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+      
+      // 根据提供的 JSON 结构解析
       const { token, user } = res.data;
+      
+      if (!token) throw new Error("响应中缺少有效 Token");
+      
       localStorage.setItem('zenplan_token', token);
       localStorage.setItem('zenplan_user', JSON.stringify(user));
       set({ token, user, loading: false });

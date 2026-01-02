@@ -18,6 +18,12 @@ export enum Status {
   ABANDONED = 'abandoned'
 }
 
+export interface User {
+  id: string | number;
+  username: string;
+  email: string;
+}
+
 export interface Goal {
   id: string;
   userId: string;

@@ -2,12 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store.ts';
-import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2, Settings, X, Globe } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showApiSettings, setShowApiSettings] = useState(false);
+  const [tempApiUrl, setTempApiUrl] = useState(localStorage.getItem('zenplan_api_url') || 'http://127.0.0.1:5000');
+  
   const navigate = useNavigate();
-  const { login, register, loading, error, token } = useStore();
+  const { login, register, loading, error, token, setApiUrl } = useStore();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -18,6 +21,7 @@ const Auth: React.FC = () => {
   // 如果已经有 token，直接跳转到首页
   useEffect(() => {
     if (token) {
+      console.log("Token detected, navigating to home...");
       navigate('/', { replace: true });
     }
   }, [token, navigate]);
@@ -27,18 +31,32 @@ const Auth: React.FC = () => {
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
-        // 登录成功后，上面的 useEffect 会监测到 token 变化并执行跳转
       } else {
         await register(formData.username, formData.email, formData.password);
-        setIsLogin(true); // 注册成功后切换到登录模式
+        setIsLogin(true);
       }
     } catch (err) {
-      // 错误已由 store 处理
+      console.error("Auth process error:", err);
     }
   };
 
+  const handleSaveApiSettings = () => {
+    setApiUrl(tempApiUrl);
+    setShowApiSettings(false);
+    window.location.reload(); // 重新加载以确保所有 API 调用使用新地址
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 relative">
+      {/* API 设置按钮 */}
+      <button 
+        onClick={() => setShowApiSettings(true)}
+        className="absolute top-6 right-6 p-3 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-indigo-600 hover:shadow-md transition-all"
+        title="服务器连接设置"
+      >
+        <Settings size={20} />
+      </button>
+
       <div className="w-full max-w-md">
         <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-500">
           <div className="p-10">
@@ -58,7 +76,18 @@ const Auth: React.FC = () => {
             {error && (
               <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 text-rose-600 text-sm animate-shake">
                 <AlertCircle size={18} className="shrink-0" />
-                <span>{error}</span>
+                <div className="flex-1">
+                  <p className="font-bold">登录失败</p>
+                  <p className="opacity-80">{error}</p>
+                  {error.includes("无法连接") && (
+                    <button 
+                      onClick={() => setShowApiSettings(true)}
+                      className="mt-2 text-rose-700 underline font-bold"
+                    >
+                      修改服务器地址
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -136,10 +165,44 @@ const Auth: React.FC = () => {
             </div>
           </div>
         </div>
-        <p className="mt-8 text-center text-slate-400 text-xs">
-          &copy; 2024 ZenPlan Productivity. All rights reserved.
-        </p>
       </div>
+
+      {/* API 设置模态框 */}
+      {showApiSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Globe className="text-indigo-600" size={20} />
+                  后端 API 地址
+                </h3>
+                <button onClick={() => setShowApiSettings(false)} className="text-slate-400">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-slate-500">
+                如果跨域请求失败，请确保地址正确且后端已开启 CORS。
+              </p>
+              <div className="space-y-2">
+                <input 
+                  type="text" 
+                  value={tempApiUrl}
+                  onChange={(e) => setTempApiUrl(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none font-mono text-sm"
+                  placeholder="http://127.0.0.1:5000"
+                />
+              </div>
+              <button 
+                onClick={handleSaveApiSettings}
+                className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+              >
+                保存并重载
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
