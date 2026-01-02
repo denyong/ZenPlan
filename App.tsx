@@ -12,13 +12,13 @@ import {
   X,
   LogOut
 } from 'lucide-react';
-import { useStore } from './store';
-import Dashboard from './pages/Dashboard';
-import GoalManager from './pages/GoalManager';
-import TodoList from './pages/TodoList';
-import Statistics from './pages/Statistics';
-import Review from './pages/Review';
-import Auth from './pages/Auth';
+import { useStore } from './store.ts';
+import Dashboard from './pages/Dashboard.tsx';
+import GoalManager from './pages/GoalManager.tsx';
+import TodoList from './pages/TodoList.tsx';
+import Statistics from './pages/Statistics.tsx';
+import Review from './pages/Review.tsx';
+import Auth from './pages/Auth.tsx';
 
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
   <Link
@@ -41,7 +41,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
-      {/* 侧边栏 */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between px-6 py-6 border-b border-slate-100">
@@ -56,15 +55,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
           <nav className="flex-1 px-3 py-6 space-y-1 custom-scrollbar overflow-y-auto">
             <SidebarItem to="/" icon={LayoutDashboard} label="仪表盘" active={location.pathname === '/'} />
-            
             <div className="pt-4 pb-2 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">执行管理</div>
             <SidebarItem to="/goals" icon={Target} label="目标管理" active={location.pathname.startsWith('/goals')} />
             <SidebarItem to="/todos" icon={CheckSquare} label="待办事项" active={location.pathname.startsWith('/todos')} />
-            
             <div className="pt-4 pb-2 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">深度洞察</div>
             <SidebarItem to="/stats" icon={BarChart2} label="数据统计" active={location.pathname === '/stats'} />
             <SidebarItem to="/review" icon={Calendar} label="每周复盘" active={location.pathname === '/review'} />
-            
             <div className="pt-4 pb-2 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">个人账户</div>
             <SidebarItem to="/settings" icon={Settings} label="设置" active={location.pathname === '/settings'} />
           </nav>
@@ -88,9 +84,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      {/* 主内容区 */}
       <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
-        {/* 顶部导航 */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="flex items-center justify-between px-6 py-3 min-h-[56px]">
             <div className="flex items-center gap-4">
@@ -100,14 +94,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 </button>
               )}
             </div>
-
-            <div className="flex items-center gap-3">
-              {/* Optional header items */}
-            </div>
           </div>
         </header>
 
-        {/* 页面渲染区 */}
         <div className="p-6">
           {children}
         </div>

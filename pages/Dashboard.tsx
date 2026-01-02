@@ -1,8 +1,9 @@
-
 import React, { useEffect } from 'react';
-import { useStore } from '../store';
+// Added missing Link import to fix 'Cannot find name Link' errors on lines 77, 144, 147
+import { Link } from 'react-router-dom';
+import { useStore } from '../store.ts';
 import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2 } from 'lucide-react';
-import { GoalLevel, Status, Priority } from '../types';
+import { GoalLevel, Status, Priority } from '../types.ts';
 
 const StatCard = ({ title, value, subtext, icon: Icon, color }: { title: string, value: string | number, subtext: string, icon: any, color: string }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -34,7 +35,7 @@ const Dashboard: React.FC = () => {
 
   const activeGoals = goals.filter(g => g.status === Status.PENDING).slice(0, 3);
   const todayTodos = todos.filter(t => !t.isCompleted).slice(0, 5);
-  const completedToday = todos.filter(t => t.isCompleted).length; // Placeholder logic as per API docs
+  const completedToday = todos.filter(t => t.isCompleted).length;
   
   const weeklyCompletionRate = Math.round((todos.filter(t => t.isCompleted).length / (todos.length || 1)) * 100);
 
@@ -60,7 +61,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 核心指标卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="战略目标" value={stats?.total_goals || goals.length} subtext="项正在进行" icon={Target} color="bg-indigo-600" />
         <StatCard title="今日执行" value={stats?.completed_todos_today || completedToday} subtext="项已完成" icon={CheckCircle2} color="bg-emerald-500" />
@@ -69,14 +69,13 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 今日聚焦任务 */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <Clock size={20} className="text-indigo-600" />
               今日聚焦
             </h2>
-            <button className="text-indigo-600 text-sm font-medium hover:underline">去待办列表</button>
+            <Link to="/todos" className="text-indigo-600 text-sm font-medium hover:underline">去待办列表</Link>
           </div>
           <div className="divide-y divide-slate-50 flex-1">
             {todayTodos.map((todo) => (
@@ -85,11 +84,11 @@ const Dashboard: React.FC = () => {
                   onClick={() => toggleTodo(todo.id)}
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                     todo.isCompleted 
-                      ? 'bg-indigo-600 border-indigo-600' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white' 
                       : 'border-slate-300 group-hover:border-indigo-400'
                   }`}
                 >
-                  {todo.isCompleted && <CheckCircle2 size={14} className="text-white" />}
+                  {todo.isCompleted && <CheckCircle2 size={14} />}
                 </button>
                 <div className="flex-1 min-w-0">
                   <h4 className={`font-medium truncate ${todo.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
@@ -113,16 +112,12 @@ const Dashboard: React.FC = () => {
                 <div className="p-3 bg-slate-50 rounded-full text-slate-300">
                    <CheckCircle2 size={40} />
                 </div>
-                <div>
-                  <p className="font-bold text-slate-500 text-lg">今日任务已全部清空</p>
-                  <p className="text-slate-400 text-sm">享受成就感，或开始规划明天。</p>
-                </div>
+                <p className="font-bold text-slate-500 text-lg">今日任务已全部清空</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* 重点目标跟踪 */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
           <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
             <Target size={20} className="text-indigo-600" />
@@ -144,27 +139,13 @@ const Dashboard: React.FC = () => {
                     style={{ width: `${goal.progress}%` }}
                   ></div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${
-                    goal.level === GoalLevel.LONG ? 'bg-purple-100 text-purple-700' :
-                    goal.level === GoalLevel.MID ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {goal.level === GoalLevel.LONG ? '长期' : goal.level === GoalLevel.MID ? '中期' : '短期'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium">最后更新: {new Date(goal.updatedAt).toLocaleDateString()}</span>
-                </div>
               </div>
             ))}
-            {activeGoals.length === 0 && (
-              <div className="text-center py-10 text-slate-400 text-sm italic">
-                暂无活跃目标，去“目标管理”添加一个吧。
-              </div>
-            )}
           </div>
-          <button className="w-full mt-8 py-3.5 rounded-xl bg-slate-50 text-slate-600 font-bold hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-2">
+          <Link to="/goals" className="w-full mt-8 py-3.5 rounded-xl bg-slate-50 text-slate-600 font-bold hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-2">
             战略规划
             <ChevronRight size={16} />
-          </button>
+          </Link>
         </div>
       </div>
     </div>
