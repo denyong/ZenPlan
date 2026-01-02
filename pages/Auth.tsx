@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
-import { useStore } from '../store';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useStore } from '../store.ts';
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2 } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { login, register, loading, error } = useStore();
+  const navigate = useNavigate();
+  const { login, register, loading, error, token } = useStore();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -13,17 +15,25 @@ const Auth: React.FC = () => {
     password: '',
   });
 
+  // 如果已经有 token，直接跳转到首页
+  useEffect(() => {
+    if (token) {
+      navigate('/', { replace: true });
+    }
+  }, [token, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
+        // 登录成功后，上面的 useEffect 会监测到 token 变化并执行跳转
       } else {
         await register(formData.username, formData.email, formData.password);
-        setIsLogin(true); // Switch to login after successful registration
+        setIsLogin(true); // 注册成功后切换到登录模式
       }
     } catch (err) {
-      // Error handled by store
+      // 错误已由 store 处理
     }
   };
 
