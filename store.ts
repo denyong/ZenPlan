@@ -74,7 +74,7 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ email, password }),
       });
       
-      const { token, user } = res.data;
+      const { token, user } = res.data || {};
       
       if (!token) throw new Error("响应中缺少有效 Token");
       
@@ -111,9 +111,11 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      set({ goals: res.data || [], loading: false });
+      // 防御性编程：确保 goals 始终是数组
+      const goalsData = Array.isArray(res.data) ? res.data : [];
+      set({ goals: goalsData, loading: false });
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      set({ error: err.message, loading: false, goals: [] });
     }
   },
 
@@ -154,9 +156,11 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/todos', { params: filters });
-      set({ todos: res.data || [], loading: false });
+      // 防御性编程：确保 todos 始终是数组
+      const todosData = Array.isArray(res.data) ? res.data : [];
+      set({ todos: todosData, loading: false });
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      set({ error: err.message, loading: false, todos: [] });
     }
   },
 

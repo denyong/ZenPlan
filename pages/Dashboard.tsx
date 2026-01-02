@@ -1,5 +1,5 @@
+
 import React, { useEffect } from 'react';
-// Added missing Link import to fix 'Cannot find name Link' errors on lines 77, 144, 147
 import { Link } from 'react-router-dom';
 import { useStore } from '../store.ts';
 import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2 } from 'lucide-react';
@@ -33,13 +33,17 @@ const Dashboard: React.FC = () => {
     fetchStats();
   }, [fetchGoals, fetchTodos, fetchStats]);
 
-  const activeGoals = goals.filter(g => g.status === Status.PENDING).slice(0, 3);
-  const todayTodos = todos.filter(t => !t.isCompleted).slice(0, 5);
-  const completedToday = todos.filter(t => t.isCompleted).length;
-  
-  const weeklyCompletionRate = Math.round((todos.filter(t => t.isCompleted).length / (todos.length || 1)) * 100);
+  // 防御性转换，确保始终操作数组
+  const safeGoals = Array.isArray(goals) ? goals : [];
+  const safeTodos = Array.isArray(todos) ? todos : [];
 
-  if (loading && goals.length === 0) {
+  const activeGoals = safeGoals.filter(g => g && g.status === Status.PENDING).slice(0, 3);
+  const todayTodos = safeTodos.filter(t => t && !t.isCompleted).slice(0, 5);
+  const completedToday = safeTodos.filter(t => t && t.isCompleted).length;
+  
+  const weeklyCompletionRate = Math.round((completedToday / (safeTodos.length || 1)) * 100);
+
+  if (loading && safeGoals.length === 0) {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-indigo-600" size={40} />
@@ -52,7 +56,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">欢迎回来, {user?.username}</h1>
+          <h1 className="text-3xl font-bold">欢迎回来, {user?.username || '用户'}</h1>
           <p className="text-slate-500">规划你的战略愿景，掌控每一天的执行细节。</p>
         </div>
         <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-medium">
@@ -62,10 +66,10 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="战略目标" value={stats?.total_goals || goals.length} subtext="项正在进行" icon={Target} color="bg-indigo-600" />
+        <StatCard title="战略目标" value={stats?.total_goals || safeGoals.length} subtext="项正在进行" icon={Target} color="bg-indigo-600" />
         <StatCard title="今日执行" value={stats?.completed_todos_today || completedToday} subtext="项已完成" icon={CheckCircle2} color="bg-emerald-500" />
         <StatCard title="平均效能" value={`${stats?.weekly_efficiency || weeklyCompletionRate}%`} subtext="本周胜率" icon={Activity} color="bg-orange-500" />
-        <StatCard title="主攻进展" value={`${Math.round(goals[0]?.progress || 0)}%`} subtext="核心目标" icon={TrendingUp} color="bg-indigo-400" />
+        <StatCard title="主攻进展" value={`${Math.round(safeGoals[0]?.progress || 0)}%`} subtext="核心目标" icon={TrendingUp} color="bg-indigo-400" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
