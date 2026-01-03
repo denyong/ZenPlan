@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store.ts';
-import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2, Settings, X, Globe } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Loader2, Settings, X, Globe, HelpCircle } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,10 +18,8 @@ const Auth: React.FC = () => {
     password: '',
   });
 
-  // 如果已经有 token，直接跳转到首页
   useEffect(() => {
     if (token) {
-      console.log("Token detected, navigating to home...");
       navigate('/', { replace: true });
     }
   }, [token, navigate]);
@@ -41,17 +39,18 @@ const Auth: React.FC = () => {
   };
 
   const handleSaveApiSettings = () => {
-    setApiUrl(tempApiUrl);
+    // 自动清理输入的空格
+    const cleanUrl = tempApiUrl.trim().replace(/\/+$/, '');
+    setApiUrl(cleanUrl);
     setShowApiSettings(false);
-    window.location.reload(); // 重新加载以确保所有 API 调用使用新地址
+    window.location.reload();
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 relative">
-      {/* API 设置按钮 */}
       <button 
         onClick={() => setShowApiSettings(true)}
-        className="absolute top-6 right-6 p-3 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-indigo-600 hover:shadow-md transition-all"
+        className="absolute top-6 right-6 p-3 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-indigo-600 hover:shadow-md transition-all z-10"
         title="服务器连接设置"
       >
         <Settings size={20} />
@@ -75,18 +74,25 @@ const Auth: React.FC = () => {
 
             {error && (
               <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 text-rose-600 text-sm animate-shake">
-                <AlertCircle size={18} className="shrink-0" />
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-bold">登录失败</p>
-                  <p className="opacity-80">{error}</p>
-                  {error.includes("无法连接") && (
+                  <p className="font-bold">连接异常</p>
+                  <p className="opacity-80 whitespace-pre-wrap">{error}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button 
                       onClick={() => setShowApiSettings(true)}
-                      className="mt-2 text-rose-700 underline font-bold"
+                      className="px-3 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold text-xs"
                     >
-                      修改服务器地址
+                      修改地址
                     </button>
-                  )}
+                    <a 
+                      href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS" 
+                      target="_blank" 
+                      className="px-3 py-1 bg-white border border-rose-200 text-rose-400 rounded-lg text-xs"
+                    >
+                      什么是 CORS？
+                    </a>
+                  </div>
                 </div>
               </div>
             )}
@@ -181,10 +187,17 @@ const Auth: React.FC = () => {
                   <X size={20} />
                 </button>
               </div>
-              <p className="text-sm text-slate-500">
-                如果跨域请求失败，请确保地址正确且后端已开启 CORS。
-              </p>
+              <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 space-y-2">
+                <div className="flex items-center gap-2 text-amber-700 font-bold text-xs uppercase tracking-wider">
+                  <HelpCircle size={14} />
+                  排错贴士
+                </div>
+                <p className="text-xs text-amber-600 leading-relaxed">
+                  如果遇到 <b>CORS Preflight Redirect</b> 错误：请确保填写的地址与后端定义的路由完全一致。如果后端路由没有结尾斜杠，这里也不要加斜杠。
+                </p>
+              </div>
               <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 ml-1">当前地址</label>
                 <input 
                   type="text" 
                   value={tempApiUrl}
@@ -195,9 +208,9 @@ const Auth: React.FC = () => {
               </div>
               <button 
                 onClick={handleSaveApiSettings}
-                className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
               >
-                保存并重载
+                保存并重载页面
               </button>
             </div>
           </div>

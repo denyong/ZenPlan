@@ -1,7 +1,9 @@
 
-// 默认地址，优先从本地存储读取，方便用户在 UI 中修改
+// 默认地址，优先从本地存储读取
 const getBaseUrl = () => {
-  return localStorage.getItem('zenplan_api_url') || 'http://127.0.0.1:5000';
+  let url = localStorage.getItem('zenplan_api_url') || 'http://127.0.0.1:5000';
+  // 移除末尾多余的斜杠
+  return url.replace(/\/+$/, '');
 };
 
 interface RequestOptions extends RequestInit {
@@ -13,7 +15,10 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
   const token = localStorage.getItem('zenplan_token');
   const baseUrl = getBaseUrl();
 
-  let url = `${baseUrl}${endpoint}`;
+  // 确保 endpoint 以 / 开头
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let url = `${baseUrl}${path}`;
+
   if (params) {
     const searchParams = new URLSearchParams(params);
     url += `?${searchParams.toString()}`;
@@ -21,6 +26,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
 
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   };
 
   if (token) {
@@ -30,7 +36,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
   try {
     const response = await fetch(url, {
       ...rest,
-      mode: 'cors', // 显式声明跨域模式
+      mode: 'cors',
       headers: {
         ...defaultHeaders,
         ...headers,
@@ -40,15 +46,16 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
     const data = await response.json();
 
     if (!response.ok) {
-      // 抛出后端返回的错误信息
       throw new Error(data.message || `请求失败: ${response.status}`);
     }
 
     return data;
   } catch (err: any) {
-    // 如果没有 response 说明是浏览器层面的网络错误（通常是 CORS 或地址不通）
+    console.error(`[API Error] URL: ${url}`, err);
+    
     if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-      throw new Error(`无法连接到服务器 (${baseUrl})。请检查后端是否启动，并已开启 CORS。`);
+      // 针对 "Redirect is not allowed for a preflight request" 的特别诊断
+      throw new Error(`连接失败。请检查：\n1. 后端是否已启动并在 ${baseUrl} 监听。\n2. 后端是否允许跨域 (CORS)。\n3. 如果报错重定向，请尝试在地址末尾添加或删除斜杠。`);
     }
     throw err;
   }
