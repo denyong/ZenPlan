@@ -161,7 +161,7 @@ const GoalManager: React.FC = () => {
       ) : (
         <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
           {filteredGoals.map((goal) => (
-            <div key={goal.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all group relative overflow-hidden">
+            <div key={goal.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all group relative">
               <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
                   goal.level === GoalLevel.LONG ? 'bg-purple-100 text-purple-600' :
@@ -171,26 +171,33 @@ const GoalManager: React.FC = () => {
                 </div>
                 <div className="relative">
                   <button 
-                    onClick={() => setShowMenuId(showMenuId === goal.id ? null : goal.id)}
-                    className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenuId(showMenuId === goal.id ? null : goal.id);
+                    }}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors relative z-20"
                   >
                     <MoreVertical size={20} />
                   </button>
                   {showMenuId === goal.id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
-                      <button 
-                        onClick={() => openModal(goal)}
-                        className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                      >
-                        <Edit3 size={14} /> 编辑
-                      </button>
-                      <button 
-                        onClick={() => { deleteGoal(goal.id); setShowMenuId(null); }}
-                        className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                      >
-                        <Trash2 size={14} /> 删除
-                      </button>
-                    </div>
+                    <>
+                      {/* 点击遮罩用于关闭菜单 */}
+                      <div className="fixed inset-0 z-30" onClick={() => setShowMenuId(null)}></div>
+                      <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-40 animate-in fade-in zoom-in duration-200">
+                        <button 
+                          onClick={() => openModal(goal)}
+                          className="w-full px-4 py-2 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                        >
+                          <Edit3 size={14} className="text-indigo-500" /> 编辑
+                        </button>
+                        <button 
+                          onClick={() => { deleteGoal(goal.id); setShowMenuId(null); }}
+                          className="w-full px-4 py-2 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                        >
+                          <Trash2 size={14} /> 删除
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -223,8 +230,8 @@ const GoalManager: React.FC = () => {
                 </div>
               </div>
               
-              {/* 背景装饰 */}
-              <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-[0.03] ${
+              {/* 背景装饰：添加 pointer-events-none 防止拦截菜单点击 */}
+              <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-[0.03] pointer-events-none ${
                  goal.level === GoalLevel.LONG ? 'bg-purple-500' :
                  goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
               }`}></div>
