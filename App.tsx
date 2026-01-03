@@ -34,7 +34,8 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
   </Link>
 );
 
-const AppLayout = ({ children }: { children: React.ReactNode }) => {
+// Added optional children type to resolve TS errors in routing contexts
+const AppLayout = ({ children }: { children?: React.ReactNode }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { user, logout } = useStore();
@@ -105,7 +106,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Added optional children type to resolve TS errors in routing contexts
+const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { token } = useStore();
   if (!token) {
     return <Navigate to="/auth" replace />;

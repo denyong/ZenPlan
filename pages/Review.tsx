@@ -20,13 +20,13 @@ const Review: React.FC = () => {
     return { year: now.getFullYear(), week: weekNo };
   }, []);
 
-  const completed = todos.filter(t => t.isCompleted).map(t => t.title);
-  const pending = todos.filter(t => !t.isCompleted).map(t => t.title);
+  const completed = todos.filter(t => t.is_completed).map(t => t.title);
+  const pending = todos.filter(t => !t.is_completed).map(t => t.title);
 
   const [formData, setFormData] = useState({
-    winsContent: '',
-    obstaclesContent: '',
-    nextFocusContent: ''
+    wins_content: '',
+    obstacles_content: '',
+    next_focus_content: ''
   });
 
   const [isSaved, setIsSaved] = useState(false);
@@ -34,7 +34,7 @@ const Review: React.FC = () => {
   const handleSave = () => {
     saveReview({
       year: currentInfo.year,
-      weekNumber: currentInfo.week,
+      week_number: currentInfo.week,
       ...formData
     });
     setIsSaved(true);
@@ -92,9 +92,9 @@ const Review: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { key: "winsContent", q: "哪些事做得好？", a: "列出 3 个成功的关键点...", icon: <Sparkles className="text-amber-500" size={18}/> },
-          { key: "obstaclesContent", q: "遇到了哪些阻碍？", a: "识别导致延期的瓶颈因素...", icon: <MessageSquare className="text-indigo-500" size={18}/> },
-          { key: "nextFocusContent", q: "下周的头等大事？", a: "定义下周最核心的一个目标...", icon: <Send className="text-emerald-500" size={18}/> },
+          { key: "wins_content", q: "哪些事做得好？", a: "列出 3 个成功的关键点...", icon: <Sparkles className="text-amber-500" size={18}/> },
+          { key: "obstacles_content", q: "遇到了哪些阻碍？", a: "识别导致延期的瓶颈因素...", icon: <MessageSquare className="text-indigo-500" size={18}/> },
+          { key: "next_focus_content", q: "下周的头等大事？", a: "定义下周最核心的一个目标...", icon: <Send className="text-emerald-500" size={18}/> },
         ].map((item, i) => (
           <div key={i} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4 hover:border-indigo-200 transition-colors">
             <div className="flex items-center gap-2">

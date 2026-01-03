@@ -22,47 +22,48 @@ export interface User {
   id: string | number;
   username: string;
   email: string;
+  avatar_url?: string;
 }
 
 export interface Goal {
   id: string;
-  userId: string;
+  user_id: string;
   title: string;
   description: string;
   level: GoalLevel;
-  parentId?: string;
+  parent_id?: string;
   progress: number;
   status: Status;
   deadline?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Todo {
   id: string;
-  userId: string;
-  goalId?: string;
+  user_id: string;
+  goal_id?: string;
   title: string;
   description?: string;
   priority: Priority;
-  estimatedTime: number; // 分钟
-  isCompleted: boolean;
-  dueDate: string;
-  completedAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  estimated_time: number; // 分钟
+  is_completed: boolean;
+  due_date: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WeeklyReview {
   id: string;
-  userId: string;
+  user_id: string;
   year: number;
-  weekNumber: number;
-  winsContent: string;
-  obstaclesContent: string;
-  nextFocusContent: string;
-  summaryAi?: string;
-  createdAt: string;
+  week_number: number;
+  wins_content: string;
+  obstacles_content: string;
+  next_focus_content: string;
+  summary_ai?: string;
+  created_at: string;
 }
 
 export interface StatCompareItem {

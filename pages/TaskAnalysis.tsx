@@ -32,9 +32,9 @@ const TaskAnalysis: React.FC = () => {
       const simplifiedTodos = todos.map(t => ({
         title: t.title,
         priority: t.priority,
-        isCompleted: t.isCompleted,
-        estimatedTime: t.estimatedTime,
-        dueDate: t.dueDate
+        is_completed: t.is_completed,
+        estimated_time: t.estimated_time,
+        due_date: t.due_date
       }));
       const result = await analyzeTaskPatterns(JSON.stringify(simplifiedTodos));
       setAiAnalysis(result);
@@ -53,8 +53,8 @@ const TaskAnalysis: React.FC = () => {
   }, [todos, aiAnalysis]);
 
   const radarData = [
-    { subject: '执行力', A: (todos.filter(t => t.isCompleted).length / (todos.length || 1)) * 100, fullMark: 100 },
-    { subject: '规划感', A: (todos.filter(t => t.goalId).length / (todos.length || 1)) * 100, fullMark: 100 },
+    { subject: '执行力', A: (todos.filter(t => t.is_completed).length / (todos.length || 1)) * 100, fullMark: 100 },
+    { subject: '规划感', A: (todos.filter(t => t.goal_id).length / (todos.length || 1)) * 100, fullMark: 100 },
     { subject: '紧迫感', A: (todos.filter(t => t.priority === Priority.HIGH).length / (todos.length || 1)) * 100, fullMark: 100 },
     { subject: '专注度', A: 85, fullMark: 100 },
     { subject: '预估准度', A: 70, fullMark: 100 },

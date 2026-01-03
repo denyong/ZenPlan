@@ -111,8 +111,8 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      // 防御性编程：确保 goals 始终是数组
-      const goalsData = Array.isArray(res.data) ? res.data : [];
+      // 防御性编程：适配文档中 res.data.goals 的结构
+      const goalsData = Array.isArray(res.data?.goals) ? res.data.goals : [];
       set({ goals: goalsData, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false, goals: [] });
@@ -156,8 +156,8 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/todos', { params: filters });
-      // 防御性编程：确保 todos 始终是数组
-      const todosData = Array.isArray(res.data) ? res.data : [];
+      // 防御性编程：适配文档中 res.data.todos 的结构
+      const todosData = Array.isArray(res.data?.todos) ? res.data.todos : [];
       set({ todos: todosData, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false, todos: [] });

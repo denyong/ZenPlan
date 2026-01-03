@@ -38,8 +38,8 @@ const Dashboard: React.FC = () => {
   const safeTodos = Array.isArray(todos) ? todos : [];
 
   const activeGoals = safeGoals.filter(g => g && g.status === Status.PENDING).slice(0, 3);
-  const todayTodos = safeTodos.filter(t => t && !t.isCompleted).slice(0, 5);
-  const completedToday = safeTodos.filter(t => t && t.isCompleted).length;
+  const todayTodos = safeTodos.filter(t => t && !t.is_completed).slice(0, 5);
+  const completedToday = safeTodos.filter(t => t && t.is_completed).length;
   
   const weeklyCompletionRate = Math.round((completedToday / (safeTodos.length || 1)) * 100);
 
@@ -87,15 +87,15 @@ const Dashboard: React.FC = () => {
                 <button 
                   onClick={() => toggleTodo(todo.id)}
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                    todo.isCompleted 
+                    todo.is_completed 
                       ? 'bg-indigo-600 border-indigo-600 text-white' 
                       : 'border-slate-300 group-hover:border-indigo-400'
                   }`}
                 >
-                  {todo.isCompleted && <CheckCircle2 size={14} />}
+                  {todo.is_completed && <CheckCircle2 size={14} />}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <h4 className={`font-medium truncate ${todo.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                  <h4 className={`font-medium truncate ${todo.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                     {todo.title}
                   </h4>
                   <p className="text-xs text-slate-400 truncate mt-0.5">{todo.description || '暂无备注'}</p>

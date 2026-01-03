@@ -36,14 +36,14 @@ const TodoList: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    goalId: '',
-    dueDate: new Date().toISOString().split('T')[0],
+    goal_id: '',
+    due_date: new Date().toISOString().split('T')[0],
     priority: Priority.MEDIUM,
-    estimatedTime: 30
+    estimated_time: 30
   });
 
   const filteredTodos = todos.filter(t => {
-    const matchesFilter = filter === 'all' || (filter === 'pending' && !t.isCompleted) || (filter === 'completed' && t.isCompleted);
+    const matchesFilter = filter === 'all' || (filter === 'pending' && !t.is_completed) || (filter === 'completed' && t.is_completed);
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
                          (t.description?.toLowerCase().includes(search.toLowerCase()) || false);
     return matchesFilter && matchesSearch;
@@ -68,20 +68,20 @@ const TodoList: React.FC = () => {
       setFormData({
         title: todo.title,
         description: todo.description || '',
-        goalId: todo.goalId || '',
-        dueDate: new Date(todo.dueDate).toISOString().split('T')[0],
+        goal_id: todo.goal_id || '',
+        due_date: new Date(todo.due_date).toISOString().split('T')[0],
         priority: todo.priority,
-        estimatedTime: todo.estimatedTime
+        estimated_time: todo.estimated_time
       });
     } else {
       setEditingTodo(null);
       setFormData({
         title: '',
         description: '',
-        goalId: '',
-        dueDate: new Date().toISOString().split('T')[0],
+        goal_id: '',
+        due_date: new Date().toISOString().split('T')[0],
         priority: Priority.MEDIUM,
-        estimatedTime: 30
+        estimated_time: 30
       });
     }
     setIsModalOpen(true);
@@ -92,7 +92,7 @@ const TodoList: React.FC = () => {
     e.preventDefault();
     const payload = {
       ...formData,
-      dueDate: new Date(formData.dueDate).toISOString()
+      due_date: new Date(formData.due_date).toISOString()
     };
     if (editingTodo) {
       await updateTodo(editingTodo.id, payload);
@@ -162,37 +162,37 @@ const TodoList: React.FC = () => {
               <button 
                 onClick={() => toggleTodo(todo.id)}
                 className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                  todo.isCompleted 
+                  todo.is_completed 
                     ? 'bg-indigo-600 border-indigo-600 text-white' 
                     : 'border-slate-300 group-hover:border-indigo-400'
                 }`}
               >
-                {todo.isCompleted && <CheckCircle2 size={16} />}
+                {todo.is_completed && <CheckCircle2 size={16} />}
               </button>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className={`font-bold text-lg truncate ${todo.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                  <h4 className={`font-bold text-lg truncate ${todo.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                     {todo.title}
                   </h4>
                 </div>
                 
                 {todo.description && (
-                  <p className={`text-sm mt-1 line-clamp-1 ${todo.isCompleted ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <p className={`text-sm mt-1 line-clamp-1 ${todo.is_completed ? 'text-slate-300' : 'text-slate-500'}`}>
                     {todo.description}
                   </p>
                 )}
                 
                 <div className="flex items-center gap-4 mt-2">
-                  {getGoalTitle(todo.goalId) && (
+                  {getGoalTitle(todo.goal_id) && (
                     <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">
                       <Target size={12} />
-                      {getGoalTitle(todo.goalId)}
+                      {getGoalTitle(todo.goal_id)}
                     </div>
                   )}
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <Calendar size={12} />
-                    {new Date(todo.dueDate).toLocaleDateString()}
+                    {new Date(todo.due_date).toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -264,8 +264,8 @@ const TodoList: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">关联战略目标</label>
                 <select 
-                  value={formData.goalId}
-                  onChange={e => setFormData({...formData, goalId: e.target.value})}
+                  value={formData.goal_id}
+                  onChange={e => setFormData({...formData, goal_id: e.target.value})}
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                 >
                   <option value="">独立任务 (不关联目标)</option>
@@ -280,8 +280,8 @@ const TodoList: React.FC = () => {
                   <label className="text-sm font-bold text-slate-700 ml-1">截止日期</label>
                   <input 
                     type="date" 
-                    value={formData.dueDate}
-                    onChange={e => setFormData({...formData, dueDate: e.target.value})}
+                    value={formData.due_date}
+                    onChange={e => setFormData({...formData, due_date: e.target.value})}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                   />
                 </div>
@@ -289,8 +289,8 @@ const TodoList: React.FC = () => {
                   <label className="text-sm font-bold text-slate-700 ml-1">预计耗时 (分)</label>
                   <input 
                     type="number" 
-                    value={formData.estimatedTime}
-                    onChange={e => setFormData({...formData, estimatedTime: parseInt(e.target.value) || 0})}
+                    value={formData.estimated_time}
+                    onChange={e => setFormData({...formData, estimated_time: parseInt(e.target.value) || 0})}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
                   />
                 </div>
