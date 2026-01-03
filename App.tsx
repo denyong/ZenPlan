@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+// Fixed react-router-dom exports by using a standard import and resolving local paths without extensions
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -12,13 +13,13 @@ import {
   X,
   LogOut
 } from 'lucide-react';
-import { useStore } from './store.ts';
-import Dashboard from './pages/Dashboard.tsx';
-import GoalManager from './pages/GoalManager.tsx';
-import TodoList from './pages/TodoList.tsx';
-import Statistics from './pages/Statistics.tsx';
-import Review from './pages/Review.tsx';
-import Auth from './pages/Auth.tsx';
+import { useStore } from './store';
+import Dashboard from './pages/Dashboard';
+import GoalManager from './pages/GoalManager';
+import TodoList from './pages/TodoList';
+import Statistics from './pages/Statistics';
+import Review from './pages/Review';
+import Auth from './pages/Auth';
 
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
   <Link

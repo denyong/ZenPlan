@@ -8,6 +8,7 @@ interface AppState {
   token: string | null;
   goals: Goal[];
   todos: Todo[];
+  reviews: WeeklyReview[];
   stats: any | null;
   loading: boolean;
   error: string | null;
@@ -33,6 +34,7 @@ interface AppState {
   deleteTodo: (id: string) => Promise<void>;
 
   // Review Actions
+  fetchReviews: () => Promise<void>;
   saveReview: (review: Partial<WeeklyReview>) => Promise<void>;
 
   // Stats Actions
@@ -44,6 +46,7 @@ export const useStore = create<AppState>((set, get) => ({
   token: null,
   goals: [],
   todos: [],
+  reviews: [],
   stats: null,
   loading: false,
   error: null,
@@ -104,16 +107,16 @@ export const useStore = create<AppState>((set, get) => ({
   logout: () => {
     localStorage.removeItem('zenplan_token');
     localStorage.removeItem('zenplan_user');
-    set({ user: null, token: null, goals: [], todos: [], stats: null });
+    set({ user: null, token: null, goals: [], todos: [], reviews: [], stats: null });
   },
 
   fetchGoals: async (filters) => {
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      // 防御性编程：适配文档中 res.data.goals 的结构
-      const goalsData = Array.isArray(res.data?.goals) ? res.data.goals : [];
-      set({ goals: goalsData, loading: false });
+      const rawData = res.data?.goals;
+      const goalsData = Array.isArray(rawData) ? rawData : [];
+      set({ goals: goalsData, loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, goals: [] });
     }
@@ -156,9 +159,9 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/todos', { params: filters });
-      // 防御性编程：适配文档中 res.data.todos 的结构
-      const todosData = Array.isArray(res.data?.todos) ? res.data.todos : [];
-      set({ todos: todosData, loading: false });
+      const rawData = res.data?.todos;
+      const todosData = Array.isArray(rawData) ? rawData : [];
+      set({ todos: todosData, loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, todos: [] });
     }
@@ -206,12 +209,23 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchReviews: async () => {
+    try {
+      const res = await apiClient('/api/v1/reviews');
+      const reviews = Array.isArray(res.data) ? res.data : (res.data?.reviews || []);
+      set({ reviews });
+    } catch (err: any) {
+      console.error("Reviews fetch error:", err);
+    }
+  },
+
   saveReview: async (review) => {
     try {
       await apiClient('/api/v1/reviews', {
         method: 'POST',
         body: JSON.stringify(review),
       });
+      get().fetchReviews();
     } catch (err: any) {
       set({ error: err.message });
     }
@@ -222,7 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
       const res = await apiClient('/api/v1/stats/dashboard/summary');
       set({ stats: res.data });
     } catch (err: any) {
-      set({ error: err.message });
+      console.error("Stats fetch error:", err);
     }
   },
 }));

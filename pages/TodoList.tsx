@@ -118,7 +118,8 @@ const TodoList: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* 移除 overflow-hidden 以免裁剪下拉菜单 */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm relative">
         <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
             {[
@@ -158,7 +159,10 @@ const TodoList: React.FC = () => {
               <Loader2 className="animate-spin text-indigo-600" size={32} />
             </div>
           ) : filteredTodos.map((todo) => (
-            <div key={todo.id} className="group px-6 py-5 flex items-center gap-5 hover:bg-slate-50 transition-all">
+            <div 
+              key={todo.id} 
+              className={`group px-6 py-5 flex items-center gap-5 hover:bg-slate-50 transition-all relative ${showMenuId === todo.id ? 'z-50 ring-1 ring-indigo-50 bg-indigo-50/10' : 'z-0'}`}
+            >
               <button 
                 onClick={() => toggleTodo(todo.id)}
                 className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
@@ -204,26 +208,34 @@ const TodoList: React.FC = () => {
                 
                 <div className="relative">
                   <button 
-                    onClick={() => setShowMenuId(showMenuId === todo.id ? null : todo.id)}
-                    className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenuId(showMenuId === todo.id ? null : todo.id);
+                    }}
+                    className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-200/50 rounded-full transition-colors relative z-10"
                   >
                     <MoreVertical size={20} />
                   </button>
                   {showMenuId === todo.id && (
-                    <div className="absolute right-0 mt-2 w-36 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200">
-                      <button 
-                        onClick={() => openModal(todo)}
-                        className="w-full px-5 py-2.5 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                      >
-                        <Edit3 size={16} /> 编辑
-                      </button>
-                      <button 
-                        onClick={() => { deleteTodo(todo.id); setShowMenuId(null); }}
-                        className="w-full px-5 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                      >
-                        <Trash2 size={16} /> 删除
-                      </button>
-                    </div>
+                    <>
+                      {/* 点击遮罩用于关闭菜单 */}
+                      <div className="fixed inset-0 z-20" onClick={() => setShowMenuId(null)}></div>
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-30 animate-in fade-in zoom-in duration-200">
+                        <button 
+                          onClick={() => openModal(todo)}
+                          className="w-full px-5 py-3 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                        >
+                          <Edit3 size={16} className="text-indigo-500" /> 编辑任务
+                        </button>
+                        <div className="h-px bg-slate-50 mx-2"></div>
+                        <button 
+                          onClick={() => { deleteTodo(todo.id); setShowMenuId(null); }}
+                          className="w-full px-5 py-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors"
+                        >
+                          <Trash2 size={16} /> 删除任务
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -232,7 +244,7 @@ const TodoList: React.FC = () => {
 
           {filteredTodos.length === 0 && !loading && (
             <div className="py-24 flex flex-col items-center justify-center text-slate-400">
-              <CalendarDays size={40} className="mb-4" />
+              <CalendarDays size={40} className="mb-4 opacity-20" />
               <p className="font-bold text-xl text-slate-500">空空如也</p>
             </div>
           )}
@@ -257,7 +269,8 @@ const TodoList: React.FC = () => {
                   type="text" 
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
-                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium"
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  placeholder="你想完成什么？"
                 />
               </div>
 
@@ -266,7 +279,7 @@ const TodoList: React.FC = () => {
                 <select 
                   value={formData.goal_id}
                   onChange={e => setFormData({...formData, goal_id: e.target.value})}
-                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 >
                   <option value="">独立任务 (不关联目标)</option>
                   {goals.map(g => (
@@ -307,7 +320,7 @@ const TodoList: React.FC = () => {
                       className={`py-3 px-4 rounded-2xl text-[10px] font-extrabold uppercase tracking-widest border transition-all ${
                         formData.priority === p 
                           ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' 
-                          : 'bg-slate-50 border-slate-200 text-slate-500'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
                       }`}
                     >
                       {p === Priority.HIGH ? '紧急' : p === Priority.MEDIUM ? '中等' : '普通'}
@@ -317,7 +330,7 @@ const TodoList: React.FC = () => {
               </div>
 
               <div className="pt-6">
-                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[20px] font-bold text-lg">
+                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-[20px] font-bold text-lg shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all">
                   {editingTodo ? '保存修改' : '确认添加任务'}
                 </button>
               </div>

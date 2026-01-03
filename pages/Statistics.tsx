@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -16,32 +16,44 @@ import {
   Legend
 } from 'recharts';
 import { useStore } from '../store.ts';
-import { Priority, Status } from '../types.ts';
+import { Priority } from '../types.ts';
 import { Info, TrendingUp, Calendar, Zap, PieChart as PieIcon } from 'lucide-react';
 
 const Statistics: React.FC = () => {
   const { todos, goals } = useStore();
 
-  const taskCompletionData = [
-    { name: '周一', 已完成: 4, 待处理: 2 },
-    { name: '周二', 已完成: 7, 待处理: 1 },
-    { name: '周三', 已完成: 5, 待处理: 3 },
-    { name: '周四', 已完成: 8, 待处理: 0 },
-    { name: '周五', 已完成: 6, 待处理: 2 },
-    { name: '周六', 已完成: 3, 待处理: 4 },
-    { name: '周日', 已完成: 2, 待处理: 1 },
-  ];
+  // 动态计算最近 7 天的执行趋势
+  const taskCompletionData = useMemo(() => {
+    const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const now = new Date();
+    const result = [];
 
-  const priorityData = [
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dayName = days[d.getDay()];
+      const dateStr = d.toISOString().split('T')[0];
+
+      const dayTodos = todos.filter(t => t.due_date.startsWith(dateStr));
+      result.push({
+        name: dayName,
+        已完成: dayTodos.filter(t => t.is_completed).length,
+        待处理: dayTodos.filter(t => !t.is_completed).length,
+      });
+    }
+    return result;
+  }, [todos]);
+
+  const priorityData = useMemo(() => [
     { name: '高优先级', value: todos.filter(t => t.priority === Priority.HIGH).length },
     { name: '中优先级', value: todos.filter(t => t.priority === Priority.MEDIUM).length },
     { name: '低优先级', value: todos.filter(t => t.priority === Priority.LOW).length },
-  ];
+  ], [todos]);
 
   const COLORS = ['#f43f5e', '#f59e0b', '#10b981'];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold">执行数据分析</h1>
         <p className="text-slate-500">通过客观的数据维度审视你的成长轨迹。</p>
@@ -52,9 +64,9 @@ const Statistics: React.FC = () => {
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <TrendingUp className="text-indigo-600" size={20} />
-              本周执行趋势
+              本周执行趋势 (真实数据)
             </h2>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-slate-400 font-bold bg-slate-50 px-3 py-1.5 rounded-lg">
               <Calendar size={14} />
               最近 7 天
             </div>
@@ -63,15 +75,15 @@ const Statistics: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={taskCompletionData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                 />
-                <Legend iconType="circle" />
-                <Bar dataKey="已完成" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="待处理" fill="#e2e8f0" radius={[4, 4, 0, 0]} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                <Bar name="已完成" dataKey="已完成" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar name="待处理" dataKey="待处理" fill="#e2e8f0" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -97,44 +109,44 @@ const Statistics: React.FC = () => {
                     cy="50%"
                     innerRadius={60}
                     outerRadius={80}
-                    paddingAngle={5}
+                    paddingAngle={8}
                     dataKey="value"
                   >
                     {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={{ borderRadius: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="space-y-4">
               {priorityData.map((item, idx) => (
-                <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                <div key={item.name} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx] }}></div>
-                    <span className="text-sm font-semibold text-slate-700">{item.name}</span>
+                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[idx] }}></div>
+                    <span className="text-sm font-bold text-slate-700">{item.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">{item.value} 项</span>
+                  <span className="text-sm font-black text-slate-900">{item.value} 项</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h2 className="text-lg font-bold mb-8 flex items-center gap-2">
-            <Zap className="text-indigo-600" size={20} />
-            目标深度与达标率
+        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
+            <Zap className="text-indigo-600" size={24} />
+            目标深度与达标率分析
           </h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={goals.map(g => ({ name: g.title, 进度: g.progress }))}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                <Tooltip />
-                <Line name="进度 (%)" type="monotone" dataKey="进度" stroke="#6366f1" strokeWidth={3} dot={{ r: 6, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }} />
+                <Tooltip contentStyle={{ borderRadius: '12px' }} />
+                <Line name="进度 (%)" type="monotone" dataKey="进度" stroke="#6366f1" strokeWidth={4} dot={{ r: 6, fill: '#6366f1', strokeWidth: 3, stroke: '#fff' }} activeDot={{ r: 8, strokeWidth: 0 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

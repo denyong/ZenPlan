@@ -1,12 +1,11 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initializing the Gemini AI client using the mandatory environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Removed module-level initialization to ensure fresh API key usage within functions.
 
-/**
- * Breaks down a high-level goal into actionable subgoals using Gemini 3 Pro.
- */
 export const getGoalBreakdown = async (goalTitle: string, description: string) => {
+  // Always create a new instance before API calls to handle potential key updates.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
@@ -40,10 +39,8 @@ export const getGoalBreakdown = async (goalTitle: string, description: string) =
   }
 };
 
-/**
- * Generates an encouraging weekly summary using Gemini 3 Flash.
- */
 export const getWeeklySummary = async (completedTodos: string[], pendingTodos: string[]) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -60,15 +57,32 @@ export const getWeeklySummary = async (completedTodos: string[], pendingTodos: s
 };
 
 /**
- * Analyzes task behavior patterns and efficiency using Gemini 3 Pro reasoning.
+ * 跨周进化趋势分析
  */
+export const analyzeReviewTrends = async (reviewsJson: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `这是过去几周的复盘数据，请分析其中的成长趋势、反复出现的阻碍，并给出针对性的建议。请使用中文回答，保持客观且具有启发性：\n${reviewsJson}`,
+      config: {
+        thinkingConfig: { thinkingBudget: 4000 }
+      }
+    });
+    return response.text || "数据不足，暂无法生成趋势分析。";
+  } catch (error) {
+    console.error("Review trend analysis failed:", error);
+    return "AI 趋势诊断不可用。";
+  }
+};
+
 export const analyzeTaskPatterns = async (todosJson: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `Analyze these tasks for patterns in priority management and execution efficiency. Provide a diagnostic report in Chinese:\n${todosJson}`,
       config: {
-        // Higher thinking budget for deeper reasoning on task patterns
         thinkingConfig: { thinkingBudget: 4000 }
       }
     });
