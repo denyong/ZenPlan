@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
-import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2, Sparkles } from 'lucide-react';
+import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2, Sparkles, Calendar } from 'lucide-react';
 import { GoalLevel, Status, Priority } from '../types';
 
 const StatCard = ({ title, value, subtext, icon: Icon, color, trend }: { title: string, value: string | number, subtext: string, icon: any, color: string, trend?: number }) => (
@@ -69,6 +69,12 @@ const Dashboard: React.FC = () => {
 
   const lastFocus = reviews.length > 0 ? reviews[reviews.length - 1].next_focus_content : null;
 
+  const formatDateShort = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  };
+
   if (loading && safeGoals.length === 0) {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center gap-4">
@@ -133,7 +139,7 @@ const Dashboard: React.FC = () => {
                   className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm ${
                     todo.is_completed 
                       ? 'bg-indigo-600 border-indigo-600 text-white' 
-                      : 'border-slate-200 bg-white group-hover:border-indigo-400 group-hover:scale-110'
+                      : 'border-slate-300 group-hover:border-indigo-400 group-hover:scale-110'
                   }`}
                 >
                   {todo.is_completed && <CheckCircle2 size={16} />}
@@ -189,7 +195,14 @@ const Dashboard: React.FC = () => {
                     </span>
                     <span className="font-black text-slate-800 text-lg leading-tight truncate max-w-[180px]">{goal.title}</span>
                   </div>
-                  <span className="text-indigo-600 font-black text-xl">{goal.progress}%</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-indigo-600 font-black text-xl">{goal.progress}%</span>
+                    {goal.deadline && (
+                      <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                        <Calendar size={10} /> {formatDateShort(goal.deadline)} 截止
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                   <div 

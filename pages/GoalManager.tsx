@@ -9,12 +9,12 @@ import {
   LayoutGrid, 
   List, 
   PlusCircle, 
-  ArrowRight,
   X,
   Trash2,
   Edit3,
   Search,
-  Loader2
+  Loader2,
+  Calendar
 } from 'lucide-react';
 
 const GoalManager: React.FC = () => {
@@ -35,7 +35,8 @@ const GoalManager: React.FC = () => {
     title: '',
     description: '',
     level: GoalLevel.SHORT,
-    progress: 0
+    progress: 0,
+    deadline: ''
   });
 
   const filteredGoals = goals.filter(g => {
@@ -52,7 +53,8 @@ const GoalManager: React.FC = () => {
         title: goal.title,
         description: goal.description,
         level: goal.level,
-        progress: goal.progress
+        progress: goal.progress,
+        deadline: goal.deadline ? new Date(goal.deadline).toISOString().split('T')[0] : ''
       });
     } else {
       setEditingGoal(null);
@@ -60,7 +62,8 @@ const GoalManager: React.FC = () => {
         title: '',
         description: '',
         level: GoalLevel.SHORT,
-        progress: 0
+        progress: 0,
+        deadline: ''
       });
     }
     setIsModalOpen(true);
@@ -69,12 +72,21 @@ const GoalManager: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
+    };
     if (editingGoal) {
-      await updateGoal(editingGoal.id, formData);
+      await updateGoal(editingGoal.id, payload);
     } else {
-      await addGoal(formData);
+      await addGoal(payload);
     }
     setIsModalOpen(false);
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '未设定';
+    return new Date(dateStr).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   return (
@@ -149,13 +161,13 @@ const GoalManager: React.FC = () => {
       ) : (
         <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
           {filteredGoals.map((goal) => (
-            <div key={goal.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 rounded-xl ${
+            <div key={goal.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all group relative overflow-hidden">
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
                   goal.level === GoalLevel.LONG ? 'bg-purple-100 text-purple-600' :
                   goal.level === GoalLevel.MID ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
                 }`}>
-                  <Target size={24} />
+                  {goal.level === GoalLevel.LONG ? '长期战略' : goal.level === GoalLevel.MID ? '中期规划' : '短期突击'}
                 </div>
                 <div className="relative">
                   <button 
@@ -183,19 +195,26 @@ const GoalManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{goal.title}</h3>
-                <p className="text-slate-500 text-sm line-clamp-2 min-h-[2.5rem]">{goal.description}</p>
+              <div className="space-y-2 relative z-10">
+                <h3 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{goal.title}</h3>
+                <p className="text-slate-500 text-sm line-clamp-2 min-h-[2.5rem] font-medium">{goal.description}</p>
               </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500 font-medium">完成进度</span>
-                  <span className="text-indigo-600 font-bold">{goal.progress}%</span>
+              <div className="mt-6 flex items-center gap-4 text-xs font-bold text-slate-400 relative z-10">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={14} />
+                  <span>截止: {formatDate(goal.deadline)}</span>
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+              </div>
+
+              <div className="mt-4 space-y-3 relative z-10">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">当前进度</span>
+                  <span className="text-indigo-600 font-black">{goal.progress}%</span>
+                </div>
+                <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                   <div 
-                    className={`h-full transition-all duration-1000 ${
+                    className={`h-full transition-all duration-1000 shadow-sm ${
                       goal.level === GoalLevel.LONG ? 'bg-purple-500' :
                       goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
                     }`}
@@ -203,6 +222,12 @@ const GoalManager: React.FC = () => {
                   ></div>
                 </div>
               </div>
+              
+              {/* 背景装饰 */}
+              <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-[0.03] ${
+                 goal.level === GoalLevel.LONG ? 'bg-purple-500' :
+                 goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
+              }`}></div>
             </div>
           ))}
 
@@ -216,12 +241,12 @@ const GoalManager: React.FC = () => {
           {(!searchTerm || filteredGoals.length > 0) && (
             <div 
               onClick={() => openModal()}
-              className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-8 text-slate-400 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer min-h-[300px]"
+              className="border-2 border-dashed border-slate-200 rounded-[32px] flex flex-col items-center justify-center p-8 text-slate-400 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer min-h-[260px]"
             >
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Plus size={24} />
+              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-slate-300 group-hover:text-indigo-600 transition-colors">
+                <Plus size={32} />
               </div>
-              <p className="font-medium">定义新目标</p>
+              <p className="font-black text-slate-500 uppercase tracking-widest text-xs">定义新战略</p>
             </div>
           )}
         </div>
@@ -230,62 +255,77 @@ const GoalManager: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-900">{editingGoal ? '编辑目标' : '创建新目标'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                <X size={20} />
+          <div className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="px-10 py-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{editingGoal ? '重塑战略目标' : '建立新战略'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-full transition-all shadow-sm">
+                <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <form onSubmit={handleSubmit} className="p-10 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">目标名称</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">目标愿景</label>
                 <input 
                   required
                   type="text" 
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
-                  placeholder="例如：学习 React 高级架构"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  placeholder="例如：成为全栈开发专家"
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">目标描述</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">详细描述</label>
                 <textarea 
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  placeholder="详细描述你的目标愿景..."
+                  placeholder="为了实现这个愿景，我需要..."
                   rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all resize-none font-medium"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              
+              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">目标级别</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">目标层级</label>
                   <select 
                     value={formData.level}
                     onChange={e => setFormData({...formData, level: e.target.value as GoalLevel})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold appearance-none"
                   >
-                    <option value={GoalLevel.LONG}>长期目标</option>
-                    <option value={GoalLevel.MID}>中期目标</option>
-                    <option value={GoalLevel.SHORT}>短期目标</option>
+                    <option value={GoalLevel.LONG}>长期战略 (1-3年)</option>
+                    <option value={GoalLevel.MID}>中期规划 (3-6月)</option>
+                    <option value={GoalLevel.SHORT}>短期突击 (1月内)</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">当前进度 (%)</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">截止日期</label>
                   <input 
-                    type="number" 
-                    min="0" max="100"
-                    value={formData.progress}
-                    onChange={e => setFormData({...formData, progress: parseInt(e.target.value) || 0})}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                    type="date" 
+                    value={formData.deadline}
+                    onChange={e => setFormData({...formData, deadline: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold"
                   />
                 </div>
               </div>
-              <div className="pt-4">
-                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
-                  {editingGoal ? '保存修改' : '立即创建'}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center mb-1">
+                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">当前进度</label>
+                   <span className="text-indigo-600 font-black">{formData.progress}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" max="100"
+                  value={formData.progress}
+                  onChange={e => setFormData({...formData, progress: parseInt(e.target.value) || 0})}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+              </div>
+
+              <div className="pt-6">
+                <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[24px] font-black text-lg shadow-2xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 active:translate-y-0 transition-all">
+                  {editingGoal ? '确认重塑' : '启动战略'}
                 </button>
               </div>
             </form>
