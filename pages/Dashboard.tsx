@@ -1,6 +1,5 @@
 
 import React, { useEffect, useMemo } from 'react';
-// Fixed react-router-dom export error by using the standard named import
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2, Sparkles } from 'lucide-react';
@@ -37,6 +36,17 @@ const Dashboard: React.FC = () => {
     fetchReviews();
   }, [fetchGoals, fetchTodos, fetchStats, fetchReviews]);
 
+  // 动态获取问候语
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 9) return '早安';
+    if (hour >= 9 && hour < 12) return '上午好';
+    if (hour >= 12 && hour < 14) return '午安';
+    if (hour >= 14 && hour < 19) return '下午好';
+    if (hour >= 19 && hour < 24) return '晚上好';
+    return '深夜好';
+  }, []);
+
   const safeGoals = Array.isArray(goals) ? goals : [];
   const safeTodos = Array.isArray(todos) ? todos : [];
 
@@ -57,7 +67,6 @@ const Dashboard: React.FC = () => {
   const activeGoals = safeGoals.filter(g => g && g.status === Status.PENDING).slice(0, 3);
   const pendingTodosDisplay = safeTodos.filter(t => t && !t.is_completed).slice(0, 5);
 
-  // 获取最近的一次复盘聚焦
   const lastFocus = reviews.length > 0 ? reviews[reviews.length - 1].next_focus_content : null;
 
   if (loading && safeGoals.length === 0) {
@@ -73,7 +82,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">午安, {user?.username || '拓荒者'}</h1>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{greeting}, {user?.username || '拓荒者'}</h1>
           <p className="text-slate-500 font-medium mt-1">你的战略执行系统已就绪，今天又是进化的一天。</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 shadow-sm px-6 py-3 rounded-3xl font-bold">
