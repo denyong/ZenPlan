@@ -42,7 +42,7 @@ const GoalManager: React.FC = () => {
   const filteredGoals = goals.filter(g => {
     const matchesLevel = selectedLevel === 'all' || g.level === selectedLevel;
     const matchesSearch = g.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         g.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (g.description && g.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesLevel && matchesSearch;
   });
 
@@ -181,18 +181,32 @@ const GoalManager: React.FC = () => {
                   </button>
                   {showMenuId === goal.id && (
                     <>
-                      {/* 点击遮罩用于关闭菜单 */}
-                      <div className="fixed inset-0 z-30" onClick={() => setShowMenuId(null)}></div>
-                      <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-40 animate-in fade-in zoom-in duration-200">
+                      {/* 遮罩层 z-index 设为 40 */}
+                      <div className="fixed inset-0 z-[40]" onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenuId(null);
+                      }}></div>
+                      {/* 菜单 z-index 设为 50，确保高于遮罩 */}
+                      <div 
+                        className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-[50] animate-in fade-in zoom-in duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button 
-                          onClick={() => openModal(goal)}
-                          className="w-full px-4 py-2 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openModal(goal);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition-colors relative z-[60]"
                         >
                           <Edit3 size={14} className="text-indigo-500" /> 编辑
                         </button>
                         <button 
-                          onClick={() => { deleteGoal(goal.id); setShowMenuId(null); }}
-                          className="w-full px-4 py-2 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteGoal(goal.id);
+                            setShowMenuId(null);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors relative z-[60]"
                         >
                           <Trash2 size={14} /> 删除
                         </button>
@@ -230,7 +244,7 @@ const GoalManager: React.FC = () => {
                 </div>
               </div>
               
-              {/* 背景装饰：添加 pointer-events-none 防止拦截菜单点击 */}
+              {/* 背景装饰：pointer-events-none 极其关键 */}
               <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-[0.03] pointer-events-none ${
                  goal.level === GoalLevel.LONG ? 'bg-purple-500' :
                  goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
@@ -260,7 +274,7 @@ const GoalManager: React.FC = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
             <div className="px-10 py-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
