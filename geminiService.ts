@@ -6,7 +6,7 @@ export const getGoalBreakdown = async (goalTitle: string, description: string) =
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Break down the following goal into 3-5 specific, actionable subgoals:\nGoal: ${goalTitle}\nDescription: ${description}`,
+      contents: `将以下目标拆解为 3-5 个具体的、可执行的子目标：\n目标：${goalTitle}\n描述：${description}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -36,14 +36,46 @@ export const getGoalBreakdown = async (goalTitle: string, description: string) =
   }
 };
 
+/**
+ * 核心：任务执行模式深度诊断 (重构版 - 纯文本约束)
+ */
+export const analyzeTaskPatterns = async (todosJson: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `你是一名资深的个人效能专家与认知行为分析师。请深度审计以下JSON格式的用户任务数据。
+
+要求（必须严格遵守，否则视为失败）：
+1. 严禁使用任何Markdown语法（如 #, **, -, > 等）或特殊装饰符号。
+2. 输出必须是完全的纯文本平铺。
+3. 必须严格遵守以下结构：
+维度简评：执行力=[分数，一句话深度评价]；规划感=[分数，一句话深度评价]；紧迫感=[分数，一句话深度评价]；专注度=[分数，一句话深度评价]；预估准度=[分数，一句话深度评价]。
+总评：[此处进行150字左右的行为模式分析，揭示用户完成任务背后的心理动机、执行漏洞或潜意识阻碍]。
+建议：1) [针对性的底层逻辑建议与具体行动指令] 2) [建议二] 3) [建议三]。
+
+待审计数据内容：
+${todosJson}`,
+      config: {
+        thinkingConfig: { thinkingBudget: 4000 }
+      }
+    });
+
+    return response.text || "诊断失败：未能生成文本报告。";
+  } catch (error) {
+    console.error("Gemini analysis failed:", error);
+    return "AI 诊断接口异常。";
+  }
+};
+
 export const getWeeklySummary = async (completedTodos: string[], pendingTodos: string[]) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Based on the following tasks, provide a brief, professional weekly summary in Chinese:
-      Completed: ${completedTodos.join(', ')}
-      Pending: ${pendingTodos.join(', ')}`,
+      contents: `根据以下任务，提供一份简短专业的周复盘总结（中文）：
+      已完成：${completedTodos.join(', ')}
+      待处理：${pendingTodos.join(', ')}`,
     });
 
     return response.text || "";
@@ -58,48 +90,14 @@ export const analyzeReviewTrends = async (reviewsJson: string) => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `这是过去几周的复盘数据，请分析其中的成长趋势、反复出现的阻碍，并给出针对性的建议。请使用中文回答，保持客观且具有启发性：\n${reviewsJson}`,
+      contents: `分析以下复盘数据，输出趋势分析报告：\n${reviewsJson}`,
       config: {
         thinkingConfig: { thinkingBudget: 4000 }
       }
     });
-    return response.text || "数据不足，暂无法生成趋势分析。";
+    return response.text || "数据不足。";
   } catch (error) {
     console.error("Review trend analysis failed:", error);
     return "AI 趋势诊断不可用。";
-  }
-};
-
-/**
- * 核心：任务执行模式深度诊断
- * 更新提示词以支持 Markdown
- */
-export const analyzeTaskPatterns = async (todosJson: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: `你是一个资深的个人效能与心理学专家。请深度分析以下 JSON 格式的待办事项数据。
-      要求：
-      1. 使用 Markdown 语法输出一份优美的诊断报告。
-      2. 报告结构必须包含：
-         # 个人效能智能诊断报告
-         ## 维度评估
-         分别针对 **执行力**、**规划感**、**紧迫感**、**专注度**、**预估准度** 进行 0-100 打分并配以简短深度评价。
-         ## 深度总评
-         挖掘用户执行模式背后的潜意识逻辑、常见阻碍及核心痛点。
-         ## 改进建议
-         提供 3 条具体的、极具可操作性的进化建议，采用 1. 2. 3. 列表格式。
-      
-      数据如下：\n${todosJson}`,
-      config: {
-        thinkingConfig: { thinkingBudget: 4000 }
-      }
-    });
-
-    return response.text || "未能生成分析报告。";
-  } catch (error) {
-    console.error("Gemini analysis failed:", error);
-    return "AI 诊断报告暂时无法生成。";
   }
 };
