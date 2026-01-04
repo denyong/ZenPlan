@@ -33,6 +33,15 @@
     .animate-shake {
       animation: shake 0.2s ease-in-out 0s 2;
     }
+    /* 自定义 Markdown 样式适配深色面板 */
+    .markdown-body h1 { @apply text-3xl font-black mb-6 border-b border-white/10 pb-4 text-white; }
+    .markdown-body h2 { @apply text-xl font-black mt-8 mb-4 text-indigo-300 flex items-center gap-2; }
+    .markdown-body h2::before { content: ""; @apply w-1 h-5 bg-indigo-500 rounded-full inline-block; }
+    .markdown-body p { @apply text-slate-300 leading-relaxed mb-4 text-base; }
+    .markdown-body ul, .markdown-body ol { @apply mb-6 ml-6 space-y-2 text-slate-300 list-disc; }
+    .markdown-body li strong { @apply text-indigo-400 font-bold; }
+    .markdown-body blockquote { @apply border-l-4 border-indigo-500 bg-indigo-500/5 px-4 py-2 italic text-indigo-100 rounded-r-lg mb-6; }
+    .markdown-body strong { @apply text-white font-black; }
   </style>
 <script type="importmap">
 {
@@ -46,6 +55,7 @@
     "recharts": "https://esm.sh/recharts@^3.6.0",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
     "zustand": "https://esm.sh/zustand@^5.0.9",
+    "react-markdown": "https://esm.sh/react-markdown@^9.0.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }

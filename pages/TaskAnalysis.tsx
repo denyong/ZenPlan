@@ -1,5 +1,6 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useStore } from '../store.ts';
 import { 
   BrainCircuit, 
@@ -21,39 +22,89 @@ const TaskAnalysis: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  const [radarStats, setRadarStats] = useState({
+    execution: 0,
+    planning: 0,
+    urgency: 0,
+    focus: 0,
+    estimation_accuracy: 0
+  });
+
   const rawBuffer = useRef("");
 
-  // 从纯文本中尝试提取分数的正则逻辑（作为雷达图的后备显示）
-  const radarStats = useMemo(() => {
-    const stats = { execution: 0, planning: 0, urgency: 0, focus: 0, estimation: 0 };
-    const text = displayedText;
-    
-    const matchVal = (key: string) => {
-      const reg = new RegExp(`${key}=\\[(\\d+)`);
-      const m = text.match(reg);
-      return m ? parseInt(m[1]) : 0;
-    };
+  // 针对后端 JSON 转义字符的解码处理
+  const decodeAiText = (str: string) => {
+    if (!str) return "";
+    try {
+      return str
+        .replace(/\\u([0-9a-fA-F]{4})/g, (_, grp) => String.fromCharCode(parseInt(grp, 16)))
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\t/g, '  ')
+        .replace(/\\r/g, '');
+    } catch (e) {
+      return str;
+    }
+  };
 
-    stats.execution = matchVal('执行力');
-    stats.planning = matchVal('规划感');
-    stats.urgency = matchVal('紧迫感');
-    stats.focus = matchVal('专注度');
-    stats.estimation = matchVal('预估准度');
+  const processChunk = (chunk: string) => {
+    rawBuffer.current += chunk;
+    const fullText = rawBuffer.current;
 
-    return stats;
-  }, [displayedText]);
+    // 匹配分析内容（兼容后端 data.analysis 结构）
+    const analysisMatch = fullText.match(/"analysis"\s*:\s*"/);
+    if (analysisMatch && analysisMatch.index !== undefined) {
+      const startPos = analysisMatch.index + analysisMatch[0].length;
+      let content = fullText.slice(startPos);
+      
+      // 寻找结束引号，但要排除转义的引号
+      // 简单流式处理：寻找未转义的引号
+      const terminatorMatch = content.match(/[^\\]"\s*[,}]/);
+      if (terminatorMatch && terminatorMatch.index !== undefined) {
+        content = content.slice(0, terminatorMatch.index + 1);
+      } else if (content.endsWith('"')) {
+        content = content.slice(0, -1);
+      }
+      
+      setDisplayedText(decodeAiText(content));
+    } else if (!fullText.startsWith('{')) {
+      // 如果不是 JSON 结构，回退到普通文本显示
+      setDisplayedText(decodeAiText(fullText));
+    }
+
+    // 匹配雷达图分值
+    const radarMatch = fullText.match(/"radar_stats"\s*:\s*({[^}]+})/);
+    if (radarMatch) {
+      try {
+        const statsStr = radarMatch[1];
+        // 提取具体的数值
+        const extract = (key: string) => {
+          const m = statsStr.match(new RegExp(`"${key}"\\s*:\\s*(\\d+)`));
+          return m ? parseInt(m[1]) : 0;
+        };
+        
+        setRadarStats({
+          execution: extract('execution'),
+          planning: extract('planning'),
+          urgency: extract('urgency'),
+          focus: extract('focus'),
+          estimation_accuracy: extract('estimation_accuracy'),
+        });
+      } catch (e) {}
+    }
+  };
 
   const performAnalysis = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
     setDisplayedText("");
+    setRadarStats({ execution: 0, planning: 0, urgency: 0, focus: 0, estimation_accuracy: 0 });
     rawBuffer.current = "";
     
     try {
       await fetchTaskAnalysis((chunk) => {
-        rawBuffer.current += chunk;
-        setDisplayedText(rawBuffer.current);
+        processChunk(chunk);
       });
     } catch (err: any) {
       setError(err.message);
@@ -67,7 +118,7 @@ const TaskAnalysis: React.FC = () => {
     { subject: '规划感', A: radarStats.planning, fullMark: 100 },
     { subject: '紧迫感', A: radarStats.urgency, fullMark: 100 },
     { subject: '专注度', A: radarStats.focus, fullMark: 100 },
-    { subject: '预估准度', A: radarStats.estimation, fullMark: 100 },
+    { subject: '预估准度', A: radarStats.estimation_accuracy, fullMark: 100 },
   ];
 
   return (
@@ -116,7 +167,14 @@ const TaskAnalysis: React.FC = () => {
               </RadarChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-6 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center px-4">根据右侧文本实时捕捉的执行指标</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {chartData.map(d => (
+              <div key={d.subject} className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg">
+                <span className="text-[10px] font-black text-slate-400">{d.subject}</span>
+                <span className="text-xs font-black text-indigo-600">{d.A}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* 报告面板 */}
@@ -130,7 +188,7 @@ const TaskAnalysis: React.FC = () => {
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3 bg-indigo-500/20 border border-indigo-400/30 px-5 py-2 rounded-full">
                   <Sparkles size={16} className="text-indigo-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-indigo-100">专家纯文本审计报告</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-indigo-100">AI 深度诊断报告</span>
                 </div>
               </div>
 
@@ -145,8 +203,8 @@ const TaskAnalysis: React.FC = () => {
               ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
                   {displayedText ? (
-                    <div className="text-slate-300 font-medium text-lg leading-relaxed whitespace-pre-wrap font-sans selection:bg-indigo-500/30">
-                      {displayedText}
+                    <div className="markdown-body">
+                      <ReactMarkdown>{displayedText}</ReactMarkdown>
                       {loading && (
                         <span className="inline-block w-2 h-5 bg-indigo-500 animate-pulse ml-1 translate-y-1"></span>
                       )}
@@ -159,7 +217,7 @@ const TaskAnalysis: React.FC = () => {
                       <div className="text-center">
                         <p className="font-black text-slate-200 text-xl mb-2 tracking-tight">等待启动深度审计...</p>
                         <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                          点击“启动”按钮，系统将绕过格式化处理，直接输出由专家撰写的底层执行模式诊断报告。
+                          AI 将深度扫描您的任务标题、优先级、完成情况及预估时间，生成的 Markdown 报告将在此呈现。
                         </p>
                       </div>
                     </div>
