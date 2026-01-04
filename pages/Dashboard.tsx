@@ -36,7 +36,6 @@ const Dashboard: React.FC = () => {
     fetchReviews();
   }, [fetchGoals, fetchTodos, fetchStats, fetchReviews]);
 
-  // 动态获取问候语
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 9) return '早安';
@@ -50,23 +49,64 @@ const Dashboard: React.FC = () => {
   const safeGoals = Array.isArray(goals) ? goals : [];
   const safeTodos = Array.isArray(todos) ? todos : [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayTodos = safeTodos.filter(t => t && t.due_date.startsWith(todayStr));
-  const completedToday = todayTodos.filter(t => t.is_completed).length;
-  
-  const weeklyEfficiency = useMemo(() => {
-    if (safeTodos.length === 0) return 0;
-    return Math.round((safeTodos.filter(t => t.is_completed).length / safeTodos.length) * 100);
-  }, [safeTodos]);
+  // --- 动态数据计算中心 ---
+  const calculations = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-  const efficiencyTrend = useMemo(() => {
-    const todayRate = todayTodos.length > 0 ? (completedToday / todayTodos.length) * 100 : 0;
-    return Math.round(todayRate - weeklyEfficiency) || 5; 
-  }, [completedToday, todayTodos, weeklyEfficiency]);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+
+    // 1. 今日 vs 昨日完成数
+    const todayTasks = safeTodos.filter(t => t.due_date.startsWith(todayStr));
+    const todayCompleted = todayTasks.filter(t => t.is_completed).length;
+    
+    const yesterdayTasks = safeTodos.filter(t => t.due_date.startsWith(yesterdayStr));
+    const yesterdayCompleted = yesterdayTasks.filter(t => t.is_completed).length;
+
+    let todoTrend = 0;
+    if (yesterdayCompleted > 0) {
+      todoTrend = Math.round(((todayCompleted - yesterdayCompleted) / yesterdayCompleted) * 100);
+    } else if (todayCompleted > 0) {
+      todoTrend = 100; // 如果昨天是0，今天有完成，则计为 100% 增长
+    }
+
+    // 2. 战略目标增长 (最近7天新增占比)
+    const newGoalsCount = safeGoals.filter(g => new Date(g.created_at) > sevenDaysAgo).length;
+    const goalGrowthTrend = safeGoals.length > 0 ? Math.round((newGoalsCount / safeGoals.length) * 100) : 0;
+
+    // 3. 整体效能趋势 (本周完成率 vs 上周完成率)
+    const thisWeekTasks = safeTodos.filter(t => new Date(t.due_date) > sevenDaysAgo);
+    const lastWeekTasks = safeTodos.filter(t => {
+      const d = new Date(t.due_date);
+      return d > fourteenDaysAgo && d <= sevenDaysAgo;
+    });
+
+    const thisWeekRate = thisWeekTasks.length > 0 ? (thisWeekTasks.filter(t => t.is_completed).length / thisWeekTasks.length) : 0;
+    const lastWeekRate = lastWeekTasks.length > 0 ? (lastWeekTasks.filter(t => t.is_completed).length / lastWeekTasks.length) : 0;
+    
+    const efficiencyRate = Math.round(thisWeekRate * 100);
+    const efficiencyTrend = Math.round((thisWeekRate - lastWeekRate) * 100);
+
+    return {
+      todayCount: todayTasks.length,
+      todayCompleted,
+      todoTrend,
+      goalGrowthTrend,
+      efficiencyRate,
+      efficiencyTrend
+    };
+  }, [safeGoals, safeTodos]);
 
   const activeGoals = safeGoals.filter(g => g && g.status === Status.PENDING).slice(0, 3);
   const pendingTodosDisplay = safeTodos.filter(t => t && !t.is_completed).slice(0, 5);
-
   const lastFocus = reviews.length > 0 ? reviews[reviews.length - 1].next_focus_content : null;
 
   const formatDateShort = (dateStr?: string) => {
@@ -103,23 +143,50 @@ const Dashboard: React.FC = () => {
       </div>
 
       {lastFocus && (
-        <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-between group overflow-hidden relative">
-          <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700"><Sparkles size={100}/></div>
+        <div className="bg-white border-2 border-indigo-50 p-6 rounded-[2rem] shadow-sm flex items-center justify-between group overflow-hidden relative">
+          <div className="absolute right-0 top-0 p-4 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 text-indigo-600"><Sparkles size={100}/></div>
           <div className="relative z-10">
-            <h4 className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">上周复盘确定的核心焦点</h4>
-            <p className="text-2xl font-black tracking-tight italic">“{lastFocus}”</p>
+            <h4 className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1">本周进化重心</h4>
+            <p className="text-2xl font-black tracking-tight italic text-slate-900">“{lastFocus}”</p>
           </div>
-          <Link to="/review" className="relative z-10 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black transition-all flex items-center gap-2">
-            查看详情 <ChevronRight size={14}/>
+          <Link to="/review" className="relative z-10 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 hover:-translate-y-0.5">
+            审计详情 <ChevronRight size={14}/>
           </Link>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="战略目标" value={safeGoals.length} subtext="项正在进行" icon={Target} color="bg-indigo-600" trend={2} />
-        <StatCard title="今日完成" value={completedToday} subtext={`/${todayTodos.length} 项任务`} icon={CheckCircle2} color="bg-emerald-500" trend={8} />
-        <StatCard title="整体效能" value={`${weeklyEfficiency}%`} subtext="完成转化率" icon={Activity} color="bg-orange-500" trend={efficiencyTrend} />
-        <StatCard title="核心进展" value={`${Math.round(safeGoals[0]?.progress || 0)}%`} subtext="主攻目标" icon={TrendingUp} color="bg-indigo-400" />
+        <StatCard 
+          title="战略目标" 
+          value={safeGoals.length} 
+          subtext="项正在进行" 
+          icon={Target} 
+          color="bg-indigo-600" 
+          trend={calculations.goalGrowthTrend} 
+        />
+        <StatCard 
+          title="今日完成" 
+          value={calculations.todayCompleted} 
+          subtext={`/${calculations.todayCount} 项任务`} 
+          icon={CheckCircle2} 
+          color="bg-emerald-500" 
+          trend={calculations.todoTrend} 
+        />
+        <StatCard 
+          title="整体效能" 
+          value={`${calculations.efficiencyRate}%`} 
+          subtext="完成转化率" 
+          icon={Activity} 
+          color="bg-orange-500" 
+          trend={calculations.efficiencyTrend} 
+        />
+        <StatCard 
+          title="核心进展" 
+          value={`${Math.round(safeGoals[0]?.progress || 0)}%`} 
+          subtext="主攻目标" 
+          icon={TrendingUp} 
+          color="bg-indigo-400" 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
