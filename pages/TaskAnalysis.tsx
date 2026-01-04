@@ -7,7 +7,8 @@ import {
   Sparkles, 
   RefreshCw,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  Play
 } from 'lucide-react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, 
@@ -57,10 +58,10 @@ const TaskAnalysis: React.FC = () => {
       // 找到引号开始的位置
       const valueStart = fullText.indexOf('"', analysisStart + analysisMarker.length);
       if (valueStart !== -1) {
-        // 寻找结束引号（这里由于是流式，我们取当前能拿到的最远内容，并过滤掉末尾可能的截断 JSON）
+        // 寻找结束引号
         let content = fullText.slice(valueStart + 1);
         
-        // 尝试寻找该字段的结束（下一个字段起始或 JSON 结束）
+        // 尝试寻找该字段的结束
         const nextMarker = '","';
         const endIdx = content.indexOf(nextMarker);
         if (endIdx !== -1) {
@@ -113,11 +114,7 @@ const TaskAnalysis: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (todos.length > 0 && !displayedText && !loading) {
-      performAnalysis();
-    }
-  }, []);
+  // 已移除：自动执行分析的 useEffect
 
   // 格式化雷达图数据
   const chartData = [
@@ -143,10 +140,14 @@ const TaskAnalysis: React.FC = () => {
         <button 
           onClick={performAnalysis}
           disabled={loading}
-          className={`flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl font-black text-slate-600 hover:shadow-lg hover:border-indigo-200 transition-all disabled:opacity-50 group ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black transition-all disabled:opacity-50 group shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <RefreshCw size={18} className={`${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-          {loading ? 'AI 推演中...' : '重新分析数据'}
+          {loading ? (
+            <RefreshCw size={18} className="animate-spin" />
+          ) : (
+            <Play size={18} fill="currentColor" />
+          )}
+          {loading ? 'AI 推演中...' : '开始 AI 诊断分析'}
         </button>
       </div>
 
@@ -210,7 +211,6 @@ const TaskAnalysis: React.FC = () => {
                   <div className="prose prose-invert max-w-none">
                     <div className="text-lg leading-relaxed text-slate-200 font-medium whitespace-pre-wrap">
                       {displayedText.split('\n').map((line, idx) => {
-                        // 简单的加粗解析
                         const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                         
                         if (line.startsWith('维度简评：') || line.startsWith('建议：') || line.startsWith('总评：')) {
@@ -239,9 +239,16 @@ const TaskAnalysis: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-4">
-                    <BarChart3 size={48} className="opacity-10" />
-                    <p className="font-bold text-slate-500 italic">等待数据注入，开始深度诊断...</p>
+                  <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-6">
+                    <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center text-indigo-400 border border-indigo-500/20 animate-pulse">
+                      <BarChart3 size={40} />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-black text-slate-200 text-xl mb-2">准备好进行深度诊断了吗？</p>
+                      <p className="text-slate-500 font-medium max-w-xs mx-auto">
+                        点击上方“开始 AI 诊断分析”按钮，我将基于您的待办事项和目标执行情况，生成专属的效能报告。
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
