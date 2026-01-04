@@ -18,6 +18,23 @@ import {
   Sparkles
 } from 'lucide-react';
 
+// 辅助函数：将任何日期/字符串转为北京时间的 YYYY-MM-DD 格式（用于 input 填充）
+const formatToBeijingISO = (dateStr?: string) => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    // 使用 en-CA 区域设置是因为它原生输出 YYYY-MM-DD 格式
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
+  } catch (e) {
+    return '';
+  }
+};
+
 const GoalManager: React.FC = () => {
   const { goals, addGoal, updateGoal, deleteGoal, fetchGoals, fetchGoalBreakdown, loading } = useStore();
   const [selectedLevel, setSelectedLevel] = useState<GoalLevel | 'all'>('all');
@@ -56,7 +73,7 @@ const GoalManager: React.FC = () => {
         description: goal.description,
         level: goal.level,
         progress: goal.progress,
-        deadline: goal.deadline ? new Date(goal.deadline).toISOString().split('T')[0] : ''
+        deadline: formatToBeijingISO(goal.deadline)
       });
     } else {
       setEditingGoal(null);
@@ -65,7 +82,7 @@ const GoalManager: React.FC = () => {
         description: '',
         level: GoalLevel.SHORT,
         progress: 0,
-        deadline: ''
+        deadline: formatToBeijingISO()
       });
     }
     setIsModalOpen(true);
@@ -76,24 +93,16 @@ const GoalManager: React.FC = () => {
     if (!formData.title) return;
     setAiBreaking(true);
     try {
-      // 改为调用 store 中的后端 API
       const result = await fetchGoalBreakdown(formData.title, formData.description);
       if (result && result.subgoals) {
         const breakdownText = result.subgoals.map((sg: any) => `• ${sg.title}: ${sg.description}`).join('\n');
         setFormData(prev => ({
           ...prev,
-          description: prev.description ? `${prev.description}\n\n[后端 AI 建议拆解]:\n${breakdownText}` : breakdownText
-        }));
-      } else if (typeof result === 'string') {
-        // 如果后端直接返回字符串
-        setFormData(prev => ({
-          ...prev,
-          description: prev.description ? `${prev.description}\n\n[后端 AI 建议拆解]:\n${result}` : result
+          description: prev.description ? `${prev.description}\n\n[AI 建议拆解]:\n${breakdownText}` : breakdownText
         }));
       }
     } catch (error: any) {
       console.error(error);
-      alert("AI 拆解失败: " + error.message);
     } finally {
       setAiBreaking(false);
     }
@@ -108,9 +117,10 @@ const GoalManager: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 提交时显式声明为北京时区的 00:00:00，防止后端识别为 UTC 并减少一天
     const payload = {
       ...formData,
-      deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
+      deadline: formData.deadline ? `${formData.deadline}T00:00:00.000+08:00` : undefined
     };
     if (editingGoal) {
       await updateGoal(editingGoal.id, payload);
@@ -120,9 +130,20 @@ const GoalManager: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const formatDate = (dateStr?: string) => {
+  // 列表显示日期：同样强制北京时区显示
+  const formatDateDisplay = (dateStr?: string) => {
     if (!dateStr) return '未设定';
-    return new Date(dateStr).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    try {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return '无效日期';
+    }
   };
 
   return (
@@ -254,7 +275,7 @@ const GoalManager: React.FC = () => {
               <div className="mt-6 flex items-center gap-4 text-xs font-bold text-slate-400">
                 <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
                   <Calendar size={14} className="text-slate-400" />
-                  <span>截止: {formatDate(goal.deadline)}</span>
+                  <span>截止: {formatDateDisplay(goal.deadline)}</span>
                 </div>
               </div>
 

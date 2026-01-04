@@ -19,13 +19,19 @@ import {
   Loader2
 } from 'lucide-react';
 
-const getBeijingDateString = (date: Date = new Date()) => {
-  return new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date).replace(/\//g, '-');
+const formatToBeijingISO = (dateStr?: string) => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
+  } catch (e) {
+    return '';
+  }
 };
 
 const TodoList: React.FC = () => {
@@ -53,13 +59,12 @@ const TodoList: React.FC = () => {
     title: '',
     description: '',
     goal_id: '',
-    due_date: getBeijingDateString(),
+    due_date: formatToBeijingISO(),
     priority: Priority.MEDIUM,
     estimated_time: 30
   });
 
   const filteredTodos = todos.filter(t => {
-    const todayBeijing = getBeijingDateString();
     const matchesFilter = filter === 'all' || (filter === 'pending' && !t.is_completed) || (filter === 'completed' && t.is_completed);
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
                          (t.description?.toLowerCase().includes(search.toLowerCase()) || false);
@@ -86,7 +91,7 @@ const TodoList: React.FC = () => {
         title: todo.title,
         description: todo.description || '',
         goal_id: todo.goal_id || '',
-        due_date: todo.due_date.split('T')[0],
+        due_date: formatToBeijingISO(todo.due_date),
         priority: todo.priority,
         estimated_time: todo.estimated_time
       });
@@ -96,7 +101,7 @@ const TodoList: React.FC = () => {
         title: '',
         description: '',
         goal_id: '',
-        due_date: getBeijingDateString(),
+        due_date: formatToBeijingISO(),
         priority: Priority.MEDIUM,
         estimated_time: 30
       });
@@ -107,9 +112,10 @@ const TodoList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 显式附加北京时区偏移量
     const payload = {
       ...formData,
-      due_date: `${formData.due_date}T00:00:00.000Z` 
+      due_date: `${formData.due_date}T00:00:00.000+08:00` 
     };
     if (editingTodo) {
       await updateTodo(editingTodo.id, payload);
@@ -212,7 +218,7 @@ const TodoList: React.FC = () => {
                   )}
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <Calendar size={12} />
-                    {todo.due_date.split('T')[0]}
+                    {formatToBeijingISO(todo.due_date)}
                   </div>
                 </div>
               </div>
