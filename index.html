@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', "Microsoft YaHei", "PingFang SC", sans-serif;
       background-color: #f8fafc;
       margin: 0;
     }
@@ -19,88 +19,86 @@
       width: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.02);
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
     }
     
-    /* 高级 Markdown 排版样式 */
+    /* 极致中文 Markdown 排版 */
     .markdown-body {
-      color: #e2e8f0; /* Slate-200 */
-      line-height: 2; /* 增加行高，减少紧凑感 */
-      font-size: 1.1rem;
+      color: #f1f5f9; /* Slate-100 */
+      line-height: 2.2; /* 进一步增加行高 */
+      font-size: 1.125rem;
+      letter-spacing: 0.02em; /* 增加中文字间距 */
     }
     
     .markdown-body h2 { 
-      @apply text-2xl font-black mt-16 mb-8 text-white flex items-center gap-3 tracking-tight;
-      color: #818cf8; /* Indigo-400 */
+      @apply text-2xl font-black mt-20 mb-10 text-white flex items-center gap-4 tracking-tight;
+      color: #a5b4fc; /* Indigo-300 */
     }
     
-    /* 为二级标题添加装饰线 */
     .markdown-body h2::before { 
       content: ""; 
-      @apply w-1.5 h-8 bg-indigo-500 rounded-full inline-block; 
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+      @apply w-2 h-8 bg-indigo-500 rounded-full inline-block; 
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.8);
     }
 
     .markdown-body p { 
-      @apply mb-8 text-slate-300 font-medium; 
+      @apply mb-10 text-slate-200 font-medium; 
     }
 
-    /* 列表美化 */
     .markdown-body ul { 
-      @apply mb-12 space-y-5; 
+      @apply mb-14 space-y-6; 
     }
     
     .markdown-body li { 
-      @apply pl-2 flex items-start gap-3;
+      @apply pl-2 flex items-start gap-4;
       list-style-type: none;
     }
     
     .markdown-body ul li::before {
       content: "•";
-      @apply text-indigo-500 font-black text-xl leading-none mt-1;
+      @apply text-indigo-500 font-black text-2xl leading-none mt-1.5;
     }
 
     .markdown-body ol {
-      @apply mb-12 space-y-6;
+      @apply mb-14 space-y-8;
       counter-reset: item;
     }
 
     .markdown-body ol li {
-      @apply pl-0 flex flex-col items-start gap-1;
+      @apply pl-0 flex flex-col items-start gap-2;
       counter-increment: item;
       list-style-type: none;
     }
 
     .markdown-body ol li::before {
-      content: counter(item) ". ";
-      @apply text-indigo-400 font-black text-sm uppercase tracking-widest mb-1;
+      content: "行动步骤 " counter(item);
+      @apply text-indigo-400 font-black text-[10px] uppercase tracking-[0.2em] mb-1 bg-indigo-500/10 px-3 py-1 rounded-md border border-indigo-500/20;
     }
 
     .markdown-body strong { 
-      @apply text-white font-black px-1 rounded;
-      background: rgba(99, 102, 241, 0.1);
+      @apply text-white font-black px-1.5 py-0.5 rounded mx-1;
+      background: rgba(99, 102, 241, 0.2);
     }
     
     .markdown-body hr { 
-      @apply border-white/5 my-12; 
+      @apply border-white/5 my-16; 
     }
 
-    /* 改进文字对比度，适配特定强调语境 */
     .markdown-body li strong {
-      @apply text-indigo-200 bg-transparent px-0;
+      @apply text-indigo-100 bg-transparent px-0 mx-0 font-black;
     }
 
     @keyframes pulse-border {
       0% { border-color: rgba(99, 102, 241, 0.1); }
-      50% { border-color: rgba(99, 102, 241, 0.3); }
+      50% { border-color: rgba(99, 102, 241, 0.4); }
       100% { border-color: rgba(99, 102, 241, 0.1); }
     }
     .glow-border {
-      animation: pulse-border 3s infinite ease-in-out;
+      animation: pulse-border 4s infinite ease-in-out;
     }
   </style>
 <script type="importmap">
