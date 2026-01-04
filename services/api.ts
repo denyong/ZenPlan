@@ -5,10 +5,11 @@ const getBaseUrl = () => {
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
+  onStream?: (chunk: string) => void; // 新增：流式回调
 }
 
 export const apiClient = async (endpoint: string, options: RequestOptions = {}) => {
-  const { params, headers, ...rest } = options;
+  const { params, headers, onStream, ...rest } = options;
   const token = localStorage.getItem('calmexec_token');
   const baseUrl = getBaseUrl();
 
@@ -51,6 +52,34 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
       },
     });
 
+    // 核心逻辑：401 处理
+    if (response.status === 401) {
+      console.warn("[CalmExec] Token 过期或无效，正在跳转登录...");
+      localStorage.removeItem('calmexec_token');
+      localStorage.removeItem('calmexec_user');
+      // 强制跳转到登录页 (Hash 路由)
+      window.location.hash = '#/auth';
+      // 抛出错误以中断当前业务逻辑
+      throw new Error("会话已过期，请重新登录。");
+    }
+
+    // 处理流式输出逻辑
+    if (onStream && response.body && response.ok) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value, { stream: !done });
+        if (chunkValue) {
+          onStream(chunkValue);
+        }
+      }
+      return { data: { success: true } }; // 流式结束返回简单标志
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -61,13 +90,11 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
   } catch (err: any) {
     console.error(`[CalmExec API Error] 目标 URL: ${url}`, err);
     
+    // 如果是 401 触发的 Error 不再展示诊断提示，由 UI 或路由处理
+    if (err.message.includes("重新登录")) throw err;
+
     if (err.name === 'TypeError' && (err.message === 'Failed to fetch' || err.message.includes('CORS'))) {
-      const diagnosis = `
-检测到网络连接失败 (ERR_FAILED)。这通常由以下原因引起：
-1. 后端服务未启动：请确保 Flask/FastAPI/Node 在 ${baseUrl} 运行。
-2. 跨域拦截 (CORS)：后端未允许来自当前域名的请求。
-3. 预检重定向：请检查后端路由是否强制要求末尾斜杠。
-      `.trim();
+      const diagnosis = `连接失败。请确保后端服务在 ${baseUrl} 运行且允许跨域请求。`;
       throw new Error(diagnosis);
     }
     throw err;

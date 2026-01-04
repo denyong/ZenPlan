@@ -39,7 +39,7 @@ interface AppState {
   fetchTrendReport: () => Promise<string>;
 
   // AI Logic (Backend-based)
-  fetchTaskAnalysis: () => Promise<string>;
+  fetchTaskAnalysis: (onStream?: (chunk: string) => void) => Promise<any>;
   fetchGoalBreakdown: (title: string, description: string) => Promise<any>;
 
   // Stats Actions
@@ -83,7 +83,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       
       const { token, user } = res.data || {};
-      
       if (!token) throw new Error("响应中缺少有效 Token");
       
       localStorage.setItem('calmexec_token', token);
@@ -113,6 +112,7 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.removeItem('calmexec_token');
     localStorage.removeItem('calmexec_user');
     set({ user: null, token: null, goals: [], todos: [], reviews: [], stats: null });
+    window.location.hash = '#/auth';
   },
 
   fetchGoals: async (filters) => {
@@ -237,19 +237,20 @@ export const useStore = create<AppState>((set, get) => ({
   fetchTrendReport: async () => {
     try {
       const res = await apiClient('/api/v1/reviews/analysis/trends');
-      return res.data?.report || res.data?.analysis_report || "暂无分析数据";
+      return res.data?.report || res.data?.analysis_report || "暂无趋势分析数据。";
     } catch (err: any) {
       throw new Error(err.message || "无法获取分析报告");
     }
   },
 
-  fetchTaskAnalysis: async () => {
+  fetchTaskAnalysis: async (onStream) => {
     try {
-      const res = await apiClient('/api/v1/analysis/tasks');
-      // 假设后端返回 { data: { analysis: "..." } } 或直接返回字符串
-      return res.data?.analysis || res.data?.report || res.data || "分析报告生成中...";
+      const res = await apiClient('/api/v1/analysis/tasks', {
+        onStream: onStream
+      });
+      return res.data;
     } catch (err: any) {
-      throw new Error(err.message || "无法获取任务分析报告");
+      throw new Error(err.message || "AI 诊断请求失败，请检查后端接口。");
     }
   },
 
@@ -261,7 +262,7 @@ export const useStore = create<AppState>((set, get) => ({
       });
       return res.data;
     } catch (err: any) {
-      throw new Error(err.message || "无法获取目标拆解建议");
+      throw new Error(err.message || "目标拆解失败。");
     }
   },
 
