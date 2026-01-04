@@ -107,7 +107,6 @@ const TodoList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 强制转换为带 00:00:00 的 ISO 格式，避免后端解析为 UTC 昨天的日期
     const payload = {
       ...formData,
       due_date: `${formData.due_date}T00:00:00.000Z` 
@@ -125,7 +124,7 @@ const TodoList: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">待办事项</h1>
-          <p className="text-slate-500 text-sm">锁定北京时间 (Asia/Shanghai) 追踪微观执行。</p>
+          <p className="text-slate-500 text-sm">追踪微观执行，掌控每一个细节。</p>
         </div>
         <button 
           onClick={() => openModal()}

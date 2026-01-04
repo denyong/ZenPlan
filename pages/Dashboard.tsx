@@ -66,7 +66,6 @@ const Dashboard: React.FC = () => {
   const safeTodos = Array.isArray(todos) ? todos : [];
 
   const calculations = useMemo(() => {
-    // 关键点：使用北京日期作为基准
     const todayStr = getBeijingDateString();
     
     const now = new Date();
@@ -150,7 +149,7 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">{greeting}, {user?.username || '拓荒者'}</h1>
-          <p className="text-slate-500 font-medium mt-1">系统已锚定北京时间 (Asia/Shanghai)。冷静规划，极致执行。</p>
+          <p className="text-slate-500 font-medium mt-1">冷静规划，极致执行。</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 shadow-sm px-6 py-3 rounded-3xl font-bold">
           <div className="p-1.5 bg-amber-100 rounded-lg text-amber-600">
@@ -220,7 +219,7 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50">
             <h2 className="text-xl font-black flex items-center gap-3">
               <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
-              今日执行聚焦 (北京时间)
+              今日执行聚焦
             </h2>
             <Link to="/todos" className="px-4 py-2 bg-slate-50 text-indigo-600 text-xs font-black rounded-xl hover:bg-indigo-50 transition-colors uppercase tracking-widest">查看全部</Link>
           </div>
@@ -266,7 +265,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-black text-slate-900 text-2xl">完美清空！</p>
-                  <p className="text-slate-400 font-medium">北京时间今日任务已全部达成。</p>
+                  <p className="text-slate-400 font-medium">今日任务已全部达成。</p>
                 </div>
               </div>
             )}

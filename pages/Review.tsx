@@ -115,7 +115,6 @@ const Review: React.FC = () => {
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               进化审计
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md uppercase tracking-tighter">Asia/Shanghai</span>
             </h1>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Evolutionary Growth Archive</p>
           </div>
