@@ -46,9 +46,23 @@ interface AppState {
   fetchStats: () => Promise<void>;
 }
 
+// 辅助函数：安全解析用户信息
+const getInitialUser = (): User | null => {
+  try {
+    const userStr = localStorage.getItem('calmexec_user');
+    if (userStr && userStr !== "undefined") {
+      return JSON.parse(userStr);
+    }
+  } catch (e) {
+    console.error("Failed to parse initial user", e);
+  }
+  return null;
+};
+
 export const useStore = create<AppState>((set, get) => ({
-  user: null,
-  token: null,
+  // 核心改动：直接从本地存储同步初始化，消除刷新闪现
+  user: getInitialUser(),
+  token: localStorage.getItem('calmexec_token'),
   goals: [],
   todos: [],
   reviews: [],
@@ -61,11 +75,12 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   checkAuth: () => {
+    // 此时 checkAuth 更多作为一种确保状态同步的后备手段
     try {
       const token = localStorage.getItem('calmexec_token');
-      const userStr = localStorage.getItem('calmexec_user');
-      if (token && userStr && userStr !== "undefined") {
-        set({ token, user: JSON.parse(userStr) });
+      const user = getInitialUser();
+      if (token && user) {
+        set({ token, user });
       }
     } catch (e) {
       console.error("Auth check failed", e);
