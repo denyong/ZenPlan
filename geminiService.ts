@@ -1,10 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Removed module-level initialization to ensure fresh API key usage within functions.
-
 export const getGoalBreakdown = async (goalTitle: string, description: string) => {
-  // Always create a new instance before API calls to handle potential key updates.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -56,9 +53,6 @@ export const getWeeklySummary = async (completedTodos: string[], pendingTodos: s
   }
 };
 
-/**
- * 跨周进化趋势分析
- */
 export const analyzeReviewTrends = async (reviewsJson: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
@@ -76,12 +70,28 @@ export const analyzeReviewTrends = async (reviewsJson: string) => {
   }
 };
 
+/**
+ * 核心：任务执行模式深度诊断
+ * 更新提示词以支持 Markdown
+ */
 export const analyzeTaskPatterns = async (todosJson: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Analyze these tasks for patterns in priority management and execution efficiency. Provide a diagnostic report in Chinese:\n${todosJson}`,
+      contents: `你是一个资深的个人效能与心理学专家。请深度分析以下 JSON 格式的待办事项数据。
+      要求：
+      1. 使用 Markdown 语法输出一份优美的诊断报告。
+      2. 报告结构必须包含：
+         # 个人效能智能诊断报告
+         ## 维度评估
+         分别针对 **执行力**、**规划感**、**紧迫感**、**专注度**、**预估准度** 进行 0-100 打分并配以简短深度评价。
+         ## 深度总评
+         挖掘用户执行模式背后的潜意识逻辑、常见阻碍及核心痛点。
+         ## 改进建议
+         提供 3 条具体的、极具可操作性的进化建议，采用 1. 2. 3. 列表格式。
+      
+      数据如下：\n${todosJson}`,
       config: {
         thinkingConfig: { thinkingBudget: 4000 }
       }
