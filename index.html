@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -19,10 +19,10 @@
       width: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
+      background: rgba(255, 255, 255, 0.05);
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 10px;
     }
     @keyframes shake {
@@ -33,15 +33,23 @@
     .animate-shake {
       animation: shake 0.2s ease-in-out 0s 2;
     }
-    /* 自定义 Markdown 样式适配深色面板 */
-    .markdown-body h1 { @apply text-3xl font-black mb-6 border-b border-white/10 pb-4 text-white; }
-    .markdown-body h2 { @apply text-xl font-black mt-8 mb-4 text-indigo-300 flex items-center gap-2; }
-    .markdown-body h2::before { content: ""; @apply w-1 h-5 bg-indigo-500 rounded-full inline-block; }
-    .markdown-body p { @apply text-slate-300 leading-relaxed mb-4 text-base; }
-    .markdown-body ul, .markdown-body ol { @apply mb-6 ml-6 space-y-2 text-slate-300 list-disc; }
-    .markdown-body li strong { @apply text-indigo-400 font-bold; }
-    .markdown-body blockquote { @apply border-l-4 border-indigo-500 bg-indigo-500/5 px-4 py-2 italic text-indigo-100 rounded-r-lg mb-6; }
-    .markdown-body strong { @apply text-white font-black; }
+    
+    /* 优化 Markdown 样式 - 极致对比度版 */
+    .markdown-body {
+      color: #f1f5f9; /* Slate-100 */
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+    .markdown-body h1 { @apply text-3xl font-black mb-8 border-b border-white/20 pb-4 text-white tracking-tight; }
+    .markdown-body h2 { @apply text-2xl font-black mt-10 mb-6 text-indigo-400 flex items-center gap-3 tracking-tight; }
+    .markdown-body h2::before { content: ""; @apply w-1.5 h-6 bg-indigo-500 rounded-full inline-block; }
+    .markdown-body p { @apply mb-5 text-slate-200 font-medium; }
+    .markdown-body ul, .markdown-body ol { @apply mb-8 ml-6 space-y-3 text-slate-200 list-disc; }
+    .markdown-body li { @apply pl-1; }
+    .markdown-body li strong { @apply text-white font-bold; }
+    .markdown-body blockquote { @apply border-l-4 border-indigo-500 bg-white/5 px-6 py-4 italic text-indigo-200 rounded-r-2xl mb-8 font-medium; }
+    .markdown-body strong { @apply text-indigo-300 font-black px-1; }
+    .markdown-body hr { @apply border-white/10 my-10; }
   </style>
 <script type="importmap">
 {

@@ -57,8 +57,6 @@ const TaskAnalysis: React.FC = () => {
       const startPos = analysisMatch.index + analysisMatch[0].length;
       let content = fullText.slice(startPos);
       
-      // 寻找结束引号，但要排除转义的引号
-      // 简单流式处理：寻找未转义的引号
       const terminatorMatch = content.match(/[^\\]"\s*[,}]/);
       if (terminatorMatch && terminatorMatch.index !== undefined) {
         content = content.slice(0, terminatorMatch.index + 1);
@@ -68,7 +66,6 @@ const TaskAnalysis: React.FC = () => {
       
       setDisplayedText(decodeAiText(content));
     } else if (!fullText.startsWith('{')) {
-      // 如果不是 JSON 结构，回退到普通文本显示
       setDisplayedText(decodeAiText(fullText));
     }
 
@@ -77,7 +74,6 @@ const TaskAnalysis: React.FC = () => {
     if (radarMatch) {
       try {
         const statsStr = radarMatch[1];
-        // 提取具体的数值
         const extract = (key: string) => {
           const m = statsStr.match(new RegExp(`"${key}"\\s*:\\s*(\\d+)`));
           return m ? parseInt(m[1]) : 0;
@@ -177,18 +173,18 @@ const TaskAnalysis: React.FC = () => {
           </div>
         </div>
 
-        {/* 报告面板 */}
-        <div className="lg:col-span-2 bg-[#0f172a] rounded-[2.5rem] shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative group">
-          <div className="absolute top-0 right-0 p-12 opacity-[0.03] rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-[3000ms]">
+        {/* 报告面板 - 强化背景与文字对比 */}
+        <div className="lg:col-span-2 bg-[#020617] rounded-[2.5rem] shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative group border border-white/5">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.04] rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-[3000ms]">
             <Quote size={240} className="text-white" />
           </div>
 
           <div className="p-1 w-full h-full flex flex-col flex-1">
-             <div className="bg-white/5 backdrop-blur-3xl p-10 flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3 bg-indigo-500/20 border border-indigo-400/30 px-5 py-2 rounded-full">
+             <div className="p-10 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-400/20 px-5 py-2.5 rounded-full">
                   <Sparkles size={16} className="text-indigo-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-indigo-100">AI 深度诊断报告</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-indigo-300">AI 深度诊断报告</span>
                 </div>
               </div>
 
@@ -206,18 +202,18 @@ const TaskAnalysis: React.FC = () => {
                     <div className="markdown-body">
                       <ReactMarkdown>{displayedText}</ReactMarkdown>
                       {loading && (
-                        <span className="inline-block w-2 h-5 bg-indigo-500 animate-pulse ml-1 translate-y-1"></span>
+                        <span className="inline-block w-2.5 h-6 bg-indigo-500 animate-pulse ml-2 translate-y-1"></span>
                       )}
                     </div>
                   ) : (
                     <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-6">
-                      <div className="w-24 h-24 bg-indigo-500/5 rounded-[2rem] flex items-center justify-center text-indigo-400 border border-indigo-500/10 animate-pulse">
+                      <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center text-slate-600 border border-white/5 animate-pulse">
                         <BarChart3 size={48} />
                       </div>
                       <div className="text-center">
                         <p className="font-black text-slate-200 text-xl mb-2 tracking-tight">等待启动深度审计...</p>
                         <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                          AI 将深度扫描您的任务标题、优先级、完成情况及预估时间，生成的 Markdown 报告将在此呈现。
+                          系统将绕过多余的 UI 装饰，直接呈现由 AI 生成的高对比度分析报告。
                         </p>
                       </div>
                     </div>
