@@ -116,51 +116,51 @@ const TaskAnalysis: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black flex items-center gap-4 tracking-tight text-slate-900">
-            <div className="p-3 bg-indigo-600 text-white rounded-[1.25rem] shadow-xl shadow-indigo-100">
-              <BrainCircuit size={32} />
-            </div>
-            任务执行审计
-          </h1>
-          <p className="text-slate-500 font-medium mt-2 text-lg">AI 深度剖析您的执行链路。冷静规划，极致执行。</p>
+    <div className="h-[calc(100vh-140px)] flex flex-col space-y-6 overflow-hidden animate-in fade-in duration-700">
+      {/* 紧凑型页头 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100">
+            <BrainCircuit size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">任务审计</h1>
+            <p className="text-slate-400 font-medium text-xs">冷静规划，极致执行。</p>
+          </div>
         </div>
         <button 
           onClick={performAnalysis}
           disabled={loading}
-          className={`flex items-center gap-3 px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg transition-all disabled:opacity-50 group shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm transition-all shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 disabled:opacity-50 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          {loading ? <RefreshCw size={24} className="animate-spin" /> : <Play size={24} fill="currentColor" />}
-          {loading ? '正在诊断模式...' : '启动 AI 效能诊断'}
+          {loading ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} fill="currentColor" />}
+          {loading ? '审计中...' : '启动 AI 诊断'}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-        {/* 左侧：量化面板 */}
-        <div className="xl:col-span-4 space-y-8">
-          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl flex flex-col items-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-            <h3 className="text-xl font-black mb-10 w-full flex items-center justify-between">
-              <span className="flex items-center gap-3 text-slate-800">
-                <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
-                核心效能画像
+      <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 overflow-hidden pb-2">
+        {/* 左侧：量化面板 (高度自适应) */}
+        <div className="xl:col-span-4 flex flex-col gap-6 overflow-hidden">
+          <div className="flex-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center relative overflow-hidden">
+            <h3 className="text-sm font-black mb-4 w-full flex items-center justify-between text-slate-700">
+              <span className="flex items-center gap-2">
+                <div className="w-1 h-4 bg-indigo-600 rounded-full"></div>
+                效能画像
               </span>
-              <BarChart3 className="text-slate-200" size={24} />
+              <BarChart3 className="text-slate-200" size={16} />
             </h3>
             
-            <div className="w-full h-80">
+            <div className="w-full flex-1 min-h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
                   <PolarGrid stroke="#f1f5f9" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar
-                    name="AI 分值"
+                    name="Score"
                     dataKey="A"
                     stroke="#6366f1"
-                    strokeWidth={4}
+                    strokeWidth={3}
                     fill="#6366f1"
                     fillOpacity={0.1}
                   />
@@ -168,64 +168,64 @@ const TaskAnalysis: React.FC = () => {
               </ResponsiveContainer>
             </div>
 
-            <div className="w-full mt-10 grid grid-cols-2 gap-3">
+            <div className="w-full mt-4 grid grid-cols-2 gap-2">
               {chartData.map(d => (
-                <div key={d.subject} className="flex flex-col p-5 bg-slate-50 border border-slate-100 rounded-[1.75rem] transition-all hover:bg-indigo-50 hover:border-indigo-100 group">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-indigo-400">{d.subject}</span>
-                  <span className="text-2xl font-black text-slate-900 group-hover:text-indigo-600">{d.A}</span>
+                <div key={d.subject} className="flex flex-col p-3 bg-slate-50 border border-slate-100 rounded-2xl transition-all">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{d.subject}</span>
+                  <span className="text-xl font-black text-slate-900">{d.A}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* 右侧：报告展示面板 - 极致汉化与留白 */}
-        <div className="xl:col-span-8 bg-[#020617] rounded-[3.5rem] shadow-2xl overflow-hidden min-h-[800px] flex flex-col relative group glow-border border border-white/5">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.06),transparent_60%)]"></div>
+        {/* 右侧：报告展示面板 (固定高度，内部滚动) */}
+        <div className="xl:col-span-8 bg-[#020617] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col relative group glow-border border border-white/5">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.04),transparent_50%)]"></div>
           
-          <div className="absolute top-0 right-0 p-16 opacity-[0.03] rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-[4000ms]">
-            <Quote size={300} className="text-white" />
+          <div className="absolute top-0 right-0 p-8 opacity-[0.02] rotate-12 pointer-events-none group-hover:scale-105 transition-transform duration-[4000ms]">
+            <Quote size={200} className="text-white" />
           </div>
 
-          <div className="relative z-10 flex-1 flex flex-col p-16 md:p-24">
-            <div className="flex items-center justify-between mb-20">
-              <div className="flex items-center gap-4 bg-indigo-500/10 border border-indigo-400/20 px-6 py-3 rounded-full backdrop-blur-md">
-                <Sparkles size={18} className="text-indigo-400" />
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-indigo-300">AI 深度行为审计报告</span>
+          <div className="relative z-10 flex-1 flex flex-col p-8 md:p-10 overflow-hidden">
+            <div className="flex items-center justify-between mb-8 shrink-0">
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
+                <Sparkles size={14} className="text-indigo-400" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">AI 深度行为审计报告</span>
               </div>
-              <div className="hidden md:flex items-center gap-2 text-slate-600 font-bold text-[10px] tracking-widest uppercase">
-                CalmExec 智能分析引擎 v3.0
+              <div className="hidden md:flex items-center gap-2 text-slate-700 font-bold text-[9px] tracking-widest uppercase">
+                CALMEXEC V3.0
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-8">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
               {error ? (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-12 rounded-[3rem] flex items-start gap-8">
-                  <AlertCircle className="text-rose-400 shrink-0 mt-1" size={36} />
+                <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl flex items-start gap-4">
+                  <AlertCircle className="text-rose-400 shrink-0 mt-0.5" size={20} />
                   <div>
-                    <h4 className="font-black text-rose-100 text-2xl mb-4">审计链路异常</h4>
-                    <p className="text-rose-100/70 text-lg leading-relaxed font-medium">{error}</p>
+                    <h4 className="font-black text-rose-100 text-sm mb-1">审计中断</h4>
+                    <p className="text-rose-100/70 text-xs leading-relaxed font-medium">{error}</p>
                   </div>
                 </div>
               ) : displayedText ? (
-                <div className="markdown-body animate-in slide-in-from-bottom-8 duration-1000">
+                <div className="markdown-body animate-in slide-in-from-bottom-4 duration-700">
                   <ReactMarkdown>{displayedText}</ReactMarkdown>
                   {loading && (
-                    <div className="mt-12 flex items-center gap-4 text-indigo-400 font-black text-sm animate-pulse">
-                      <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                      正在实时注入底层逻辑诊断...
+                    <div className="mt-6 flex items-center gap-3 text-indigo-400 font-black text-[10px] animate-pulse">
+                      <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                      正在注入诊断建议...
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-10">
-                  <div className="w-36 h-36 bg-white/5 rounded-[3.5rem] flex items-center justify-center text-slate-700 border border-white/5 animate-pulse">
-                    <BarChart3 size={64} />
+                <div className="h-full flex flex-col items-center justify-center py-10 text-slate-500 space-y-6">
+                  <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-slate-700 border border-white/5 animate-pulse">
+                    <BarChart3 size={32} />
                   </div>
                   <div className="text-center">
-                    <h3 className="font-black text-slate-100 text-3xl mb-5 tracking-tight">准备进行深度审计</h3>
-                    <p className="text-slate-500 font-medium max-w-lg mx-auto leading-relaxed text-lg">
-                      系统已就绪，正在等待扫描任务流中的隐藏模式。启动诊断后，AI 报告将以极致清晰的 Markdown 结构呈现在此。
+                    <h3 className="font-black text-slate-200 text-lg mb-2">等待数据扫描</h3>
+                    <p className="text-slate-500 font-medium max-w-xs mx-auto text-xs leading-relaxed">
+                      启动审计后，AI 将在此单屏容器内精准呈现所有维度的效能分析。
                     </p>
                   </div>
                 </div>

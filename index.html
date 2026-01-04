@@ -14,88 +14,88 @@
       font-family: 'Inter', "Microsoft YaHei", "PingFang SC", sans-serif;
       background-color: #f8fafc;
       margin: 0;
+      overflow: hidden; /* 锁定主页面滚动 */
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(255, 255, 255, 0.01);
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border-radius: 10px;
     }
     
-    /* 极致中文 Markdown 排版 */
+    /* 紧凑型中文 Markdown 排版 */
     .markdown-body {
-      color: #f1f5f9; /* Slate-100 */
-      line-height: 2.2; /* 进一步增加行高 */
-      font-size: 1.125rem;
-      letter-spacing: 0.02em; /* 增加中文字间距 */
+      color: #f1f5f9;
+      line-height: 1.6; /* 压缩行高 */
+      font-size: 0.95rem; /* 微调字号 */
+      letter-spacing: 0.01em;
     }
     
     .markdown-body h2 { 
-      @apply text-2xl font-black mt-20 mb-10 text-white flex items-center gap-4 tracking-tight;
-      color: #a5b4fc; /* Indigo-300 */
+      @apply text-lg font-black mt-6 mb-3 text-white flex items-center gap-2 tracking-tight;
+      color: #a5b4fc;
     }
     
     .markdown-body h2::before { 
       content: ""; 
-      @apply w-2 h-8 bg-indigo-500 rounded-full inline-block; 
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.8);
+      @apply w-1.5 h-5 bg-indigo-500 rounded-full inline-block;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
     }
 
     .markdown-body p { 
-      @apply mb-10 text-slate-200 font-medium; 
+      @apply mb-3 text-slate-300 font-medium; 
     }
 
     .markdown-body ul { 
-      @apply mb-14 space-y-6; 
+      @apply mb-4 space-y-2; 
     }
     
     .markdown-body li { 
-      @apply pl-2 flex items-start gap-4;
+      @apply pl-1 flex items-start gap-2;
       list-style-type: none;
     }
     
     .markdown-body ul li::before {
       content: "•";
-      @apply text-indigo-500 font-black text-2xl leading-none mt-1.5;
+      @apply text-indigo-500 font-black text-lg leading-none mt-0.5;
     }
 
     .markdown-body ol {
-      @apply mb-14 space-y-8;
+      @apply mb-4 space-y-3;
       counter-reset: item;
     }
 
     .markdown-body ol li {
-      @apply pl-0 flex flex-col items-start gap-2;
+      @apply pl-0 flex flex-col items-start gap-0.5;
       counter-increment: item;
       list-style-type: none;
     }
 
     .markdown-body ol li::before {
-      content: "行动步骤 " counter(item);
-      @apply text-indigo-400 font-black text-[10px] uppercase tracking-[0.2em] mb-1 bg-indigo-500/10 px-3 py-1 rounded-md border border-indigo-500/20;
+      content: "建议 " counter(item);
+      @apply text-indigo-400 font-black text-[9px] uppercase tracking-wider bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20;
     }
 
     .markdown-body strong { 
-      @apply text-white font-black px-1.5 py-0.5 rounded mx-1;
+      @apply text-white font-black px-1 rounded;
       background: rgba(99, 102, 241, 0.2);
     }
     
     .markdown-body hr { 
-      @apply border-white/5 my-16; 
+      @apply border-white/5 my-6; 
     }
 
     .markdown-body li strong {
-      @apply text-indigo-100 bg-transparent px-0 mx-0 font-black;
+      @apply text-indigo-100 bg-transparent px-0 mx-0;
     }
 
     @keyframes pulse-border {
-      0% { border-color: rgba(99, 102, 241, 0.1); }
-      50% { border-color: rgba(99, 102, 241, 0.4); }
-      100% { border-color: rgba(99, 102, 241, 0.1); }
+      0%, 100% { border-color: rgba(99, 102, 241, 0.05); }
+      50% { border-color: rgba(99, 102, 241, 0.25); }
     }
     .glow-border {
       animation: pulse-border 4s infinite ease-in-out;
