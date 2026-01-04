@@ -19,6 +19,15 @@ import {
   Loader2
 } from 'lucide-react';
 
+const getBeijingDateString = (date: Date = new Date()) => {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date).replace(/\//g, '-');
+};
+
 const TodoList: React.FC = () => {
   const { todos, goals, toggleTodo, deleteTodo, addTodo, updateTodo, fetchTodos, fetchGoals, loading } = useStore();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -31,10 +40,8 @@ const TodoList: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  // Fix: showMenuId needs to support string | number to match Todo.id
   const [showMenuId, setShowMenuId] = useState<string | number | null>(null);
 
-  // Fix: goal_id can be string or number
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -46,12 +53,13 @@ const TodoList: React.FC = () => {
     title: '',
     description: '',
     goal_id: '',
-    due_date: new Date().toISOString().split('T')[0],
+    due_date: getBeijingDateString(),
     priority: Priority.MEDIUM,
     estimated_time: 30
   });
 
   const filteredTodos = todos.filter(t => {
+    const todayBeijing = getBeijingDateString();
     const matchesFilter = filter === 'all' || (filter === 'pending' && !t.is_completed) || (filter === 'completed' && t.is_completed);
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
                          (t.description?.toLowerCase().includes(search.toLowerCase()) || false);
@@ -66,7 +74,6 @@ const TodoList: React.FC = () => {
     }
   };
 
-  // Fix: goalId can be string or number to match Goal.id and Todo.goal_id
   const getGoalTitle = (goalId?: string | number) => {
     if (!goalId) return null;
     return goals.find(g => g.id === goalId)?.title;
@@ -79,7 +86,7 @@ const TodoList: React.FC = () => {
         title: todo.title,
         description: todo.description || '',
         goal_id: todo.goal_id || '',
-        due_date: new Date(todo.due_date).toISOString().split('T')[0],
+        due_date: todo.due_date.split('T')[0],
         priority: todo.priority,
         estimated_time: todo.estimated_time
       });
@@ -89,7 +96,7 @@ const TodoList: React.FC = () => {
         title: '',
         description: '',
         goal_id: '',
-        due_date: new Date().toISOString().split('T')[0],
+        due_date: getBeijingDateString(),
         priority: Priority.MEDIUM,
         estimated_time: 30
       });
@@ -100,9 +107,10 @@ const TodoList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 强制转换为带 00:00:00 的 ISO 格式，避免后端解析为 UTC 昨天的日期
     const payload = {
       ...formData,
-      due_date: new Date(formData.due_date).toISOString()
+      due_date: `${formData.due_date}T00:00:00.000Z` 
     };
     if (editingTodo) {
       await updateTodo(editingTodo.id, payload);
@@ -117,18 +125,17 @@ const TodoList: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">待办事项</h1>
-          <p className="text-slate-500 text-sm">管理你的微观执行，确保每一份努力都有迹可循。</p>
+          <p className="text-slate-500 text-sm">锁定北京时间 (Asia/Shanghai) 追踪微观执行。</p>
         </div>
         <button 
           onClick={() => openModal()}
-          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-200"
+          className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus size={20} />
           添加任务
         </button>
       </div>
 
-      {/* 移除 overflow-hidden 以免裁剪下拉菜单 */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm relative">
         <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
@@ -206,7 +213,7 @@ const TodoList: React.FC = () => {
                   )}
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                     <Calendar size={12} />
-                    {new Date(todo.due_date).toLocaleDateString()}
+                    {todo.due_date.split('T')[0]}
                   </div>
                 </div>
               </div>
@@ -228,7 +235,6 @@ const TodoList: React.FC = () => {
                   </button>
                   {showMenuId === todo.id && (
                     <>
-                      {/* 点击遮罩用于关闭菜单 */}
                       <div className="fixed inset-0 z-20" onClick={() => setShowMenuId(null)}></div>
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-30 animate-in fade-in zoom-in duration-200">
                         <button 

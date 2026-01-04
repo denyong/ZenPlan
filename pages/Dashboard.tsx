@@ -5,6 +5,16 @@ import { useStore } from '../store';
 import { Target, CheckCircle2, Flame, TrendingUp, Clock, ChevronRight, Activity, Loader2, Sparkles, Calendar, Zap } from 'lucide-react';
 import { GoalLevel, Status, Priority } from '../types';
 
+// 获取北京时间的辅助函数
+const getBeijingDateString = (date: Date = new Date()) => {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date).replace(/\//g, '-');
+};
+
 const StatCard = ({ title, value, subtext, icon: Icon, color, trend, trendLabel }: { title: string, value: string | number, subtext: string, icon: any, color: string, trend?: number, trendLabel?: string }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative">
     <div className="flex items-center justify-between mb-4">
@@ -56,12 +66,13 @@ const Dashboard: React.FC = () => {
   const safeTodos = Array.isArray(todos) ? todos : [];
 
   const calculations = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    // 关键点：使用北京日期作为基准
+    const todayStr = getBeijingDateString();
     
+    const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = getBeijingDateString(yesterday);
 
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(now.getDate() - 7);
@@ -139,7 +150,7 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">{greeting}, {user?.username || '拓荒者'}</h1>
-          <p className="text-slate-500 font-medium mt-1">CalmExec 战略执行系统已就绪。冷静规划，极致执行。</p>
+          <p className="text-slate-500 font-medium mt-1">系统已锚定北京时间 (Asia/Shanghai)。冷静规划，极致执行。</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 shadow-sm px-6 py-3 rounded-3xl font-bold">
           <div className="p-1.5 bg-amber-100 rounded-lg text-amber-600">
@@ -156,7 +167,7 @@ const Dashboard: React.FC = () => {
         <div className="bg-white border-2 border-indigo-50 p-6 rounded-[2rem] shadow-sm flex items-center justify-between group overflow-hidden relative">
           <div className="absolute right-0 top-0 p-4 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 text-indigo-600"><Sparkles size={100}/></div>
           <div className="relative z-10">
-            <h4 className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1">本周进化重心</h4>
+            <h4 className="text-indigo-600 text-[10px] font-black uppercase tracking-widest">本周进化重心</h4>
             <p className="text-2xl font-black tracking-tight italic text-slate-900">“{lastFocus}”</p>
           </div>
           <Link to="/review" className="relative z-10 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 hover:-translate-y-0.5">
@@ -209,7 +220,7 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50">
             <h2 className="text-xl font-black flex items-center gap-3">
               <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
-              今日聚焦执行
+              今日执行聚焦 (北京时间)
             </h2>
             <Link to="/todos" className="px-4 py-2 bg-slate-50 text-indigo-600 text-xs font-black rounded-xl hover:bg-indigo-50 transition-colors uppercase tracking-widest">查看全部</Link>
           </div>
@@ -255,7 +266,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-black text-slate-900 text-2xl">完美清空！</p>
-                  <p className="text-slate-400 font-medium">冷静的执行力无可挑剔。</p>
+                  <p className="text-slate-400 font-medium">北京时间今日任务已全部达成。</p>
                 </div>
               </div>
             )}

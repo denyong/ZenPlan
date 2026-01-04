@@ -31,8 +31,21 @@ const Review: React.FC = () => {
     fetchReviews();
   }, [fetchReviews]);
 
+  // 获取北京时区的 ISO 周数
   const currentInfo = useMemo(() => {
-    const now = new Date();
+    // 获取当前的北京时间
+    const beijingDateStr = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    }).format(new Date());
+    
+    const now = new Date(beijingDateStr);
     const target = new Date(now.valueOf());
     const dayNr = (now.getDay() + 6) % 7;
     target.setDate(target.getDate() - dayNr + 3);
@@ -102,9 +115,9 @@ const Review: React.FC = () => {
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               进化审计
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md uppercase tracking-tighter">Audit v2.0</span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] rounded-md uppercase tracking-tighter">Asia/Shanghai</span>
             </h1>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Evolutionary Review & Growth Archive</p>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Evolutionary Growth Archive</p>
           </div>
         </div>
         
@@ -314,7 +327,6 @@ const Review: React.FC = () => {
               </div>
             ) : selectedReview ? (
               <div className="space-y-6">
-                {/* 如果存在后端生成的 summary_ai，展示 AI 灵魂总结 */}
                 {selectedReview.summary_ai && (
                   <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-900 text-white p-8 rounded-[3rem] shadow-xl relative overflow-hidden border border-indigo-500/20 group">
                     <div className="absolute -right-4 -top-4 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000">
