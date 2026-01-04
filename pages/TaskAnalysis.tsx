@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store.ts';
 import { Priority } from '../types.ts';
 import { 
   BrainCircuit, 
   Sparkles, 
-  TrendingUp, 
   RefreshCw,
   AlertCircle
 } from 'lucide-react';
@@ -19,17 +18,66 @@ const TaskAnalysis: React.FC = () => {
   const [displayedText, setDisplayedText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // 用于累积原始流数据，判断是否为 JSON
+  const rawBuffer = useRef("");
+
+  // Unicode 解码工具：将 \u4efb 转换为 任务
+  const unescapeUnicode = (str: string) => {
+    return str.replace(/\\u([0-9a-fA-F]{4})/g, (_, grp) => {
+      return String.fromCharCode(parseInt(grp, 16));
+    });
+  };
+
+  // 智能内容提取：如果后端返回的是 {"analysis": "内容..."}，尝试只提取内容
+  const processChunk = (chunk: string) => {
+    rawBuffer.current += chunk;
+    const currentFull = rawBuffer.current.trim();
+
+    // 如果检测到是 JSON 格式的流（以 { 开头）
+    if (currentFull.startsWith('{')) {
+      try {
+        // 尝试寻找分析内容的起始位置 (针对 "analysis":" 或 "report":" )
+        const markers = ['"analysis":"', '"report":"', '"data":"'];
+        let contentStartIndex = -1;
+        
+        for (const marker of markers) {
+          const idx = currentFull.indexOf(marker);
+          if (idx !== -1) {
+            contentStartIndex = idx + marker.length;
+            break;
+          }
+        }
+
+        if (contentStartIndex !== -1) {
+          // 提取从标记之后到结尾的部分
+          let content = currentFull.slice(contentStartIndex);
+          // 移除末尾可能的 JSON 闭合符号 ( "} )
+          content = content.replace(/["}]$/g, '').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          setDisplayedText(unescapeUnicode(content));
+        } else {
+          // 还没读到内容标记，先不显示
+        }
+      } catch (e) {
+        // 如果解析出错，回退到普通展示并解码
+        setDisplayedText(unescapeUnicode(currentFull));
+      }
+    } else {
+      // 纯文本流，直接解码显示
+      setDisplayedText(unescapeUnicode(currentFull));
+    }
+  };
 
   const performAnalysis = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
-    setDisplayedText(""); // 开始前清空旧内容
+    setDisplayedText("");
+    rawBuffer.current = "";
     
     try {
       await fetchTaskAnalysis((chunk) => {
-        // 这里的 chunk 是后端实时发回的数据片段
-        setDisplayedText((prev) => prev + chunk);
+        processChunk(chunk);
       });
     } catch (err: any) {
       console.error(err);
@@ -40,7 +88,6 @@ const TaskAnalysis: React.FC = () => {
   };
 
   useEffect(() => {
-    // 首次进入自动分析
     if (todos.length > 0 && !displayedText && !loading) {
       performAnalysis();
     }
