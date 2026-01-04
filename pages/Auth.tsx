@@ -22,6 +22,9 @@ const Auth: React.FC = () => {
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [tempApiUrl, setTempApiUrl] = useState(localStorage.getItem('calmexec_api_url') || 'http://127.0.0.1:5000');
   
+  const [rememberEmail, setRememberEmail] = useState(localStorage.getItem('calmexec_rem_e_flag') === 'true');
+  const [rememberPassword, setRememberPassword] = useState(localStorage.getItem('calmexec_rem_p_flag') === 'true');
+
   const navigate = useNavigate();
   const { login, register, loading, error, token, setApiUrl } = useStore();
   
@@ -37,11 +40,43 @@ const Auth: React.FC = () => {
     }
   }, [token, navigate]);
 
+  // 加载记住的信息
+  useEffect(() => {
+    if (isLogin) {
+      const savedEmail = localStorage.getItem('calmexec_rem_email');
+      const savedPass = localStorage.getItem('calmexec_rem_pass');
+      
+      if (savedEmail) {
+        setFormData(prev => ({ ...prev, email: savedEmail }));
+      }
+      if (savedPass) {
+        setFormData(prev => ({ ...prev, password: savedPass }));
+      }
+    }
+  }, [isLogin]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
+        
+        // 登录成功后处理“记住”逻辑
+        if (rememberEmail) {
+          localStorage.setItem('calmexec_rem_email', formData.email);
+          localStorage.setItem('calmexec_rem_e_flag', 'true');
+        } else {
+          localStorage.removeItem('calmexec_rem_email');
+          localStorage.setItem('calmexec_rem_e_flag', 'false');
+        }
+
+        if (rememberPassword) {
+          localStorage.setItem('calmexec_rem_pass', formData.password);
+          localStorage.setItem('calmexec_rem_p_flag', 'true');
+        } else {
+          localStorage.removeItem('calmexec_rem_pass');
+          localStorage.setItem('calmexec_rem_p_flag', 'false');
+        }
       } else {
         await register(formData.username, formData.email, formData.password);
         setIsLogin(true);
@@ -166,6 +201,29 @@ const Auth: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {isLogin && (
+                <div className="flex items-center justify-between px-1">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberEmail}
+                      onChange={(e) => setRememberEmail(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
+                    />
+                    <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">记住账号</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberPassword}
+                      onChange={(e) => setRememberPassword(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
+                    />
+                    <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">记住密码</span>
+                  </label>
+                </div>
+              )}
 
               <button
                 type="submit"
