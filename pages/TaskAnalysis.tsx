@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store.ts';
-import { Priority } from '../types.ts';
 import { 
   BrainCircuit, 
   Sparkles, 
   RefreshCw,
   AlertCircle,
   BarChart3,
-  Play
+  Play,
+  Quote
 } from 'lucide-react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, 
@@ -21,7 +21,6 @@ const TaskAnalysis: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // 动态雷达图数据
   const [radarStats, setRadarStats] = useState({
     execution: 0,
     planning: 0,
@@ -32,65 +31,57 @@ const TaskAnalysis: React.FC = () => {
 
   const rawBuffer = useRef("");
 
-  // 深度解码：处理 Unicode、换行符和转义引号
+  // 深度解码与清理
   const decodeAiText = (str: string) => {
+    if (!str) return "";
     try {
       return str
         .replace(/\\u([0-9a-fA-F]{4})/g, (_, grp) => String.fromCharCode(parseInt(grp, 16)))
         .replace(/\\n/g, '\n')
         .replace(/\\"/g, '"')
+        .replace(/\\t/g, '  ')
         .replace(/\\r/g, '');
     } catch (e) {
       return str;
     }
   };
 
-  // 智能解析流中的字段
+  // 核心解析逻辑：从流中提取 analysis 内容
   const processChunk = (chunk: string) => {
     rawBuffer.current += chunk;
     const fullText = rawBuffer.current;
 
-    // 1. 提取 Analysis 文本 (针对 {"analysis": "..."})
-    const analysisMarker = '"analysis":';
-    const analysisStart = fullText.indexOf(analysisMarker);
-    
-    if (analysisStart !== -1) {
-      // 找到引号开始的位置
-      const valueStart = fullText.indexOf('"', analysisStart + analysisMarker.length);
-      if (valueStart !== -1) {
-        // 寻找结束引号
-        let content = fullText.slice(valueStart + 1);
-        
-        // 尝试寻找该字段的结束
-        const nextMarker = '","';
-        const endIdx = content.indexOf(nextMarker);
-        if (endIdx !== -1) {
-          content = content.slice(0, endIdx);
-        } else if (content.endsWith('"}')) {
-          content = content.slice(0, -2);
-        }
-        
-        setDisplayedText(decodeAiText(content));
+    // 1. 动态提取 Analysis 核心内容
+    // 匹配 "analysis":" 之后到结束的内容
+    const analysisMatch = fullText.match(/"analysis"\s*:\s*"/);
+    if (analysisMatch && analysisMatch.index !== undefined) {
+      const startPos = analysisMatch.index + analysisMatch[0].length;
+      let content = fullText.slice(startPos);
+      
+      // 寻找字段结束标记：可以是 "," 或 "} 或 字符串末尾的引号
+      // 我们寻找最后出现的引号，如果它后面跟着 , 或 }
+      const terminatorMatch = content.match(/"\s*[,}]/);
+      if (terminatorMatch && terminatorMatch.index !== undefined) {
+        content = content.slice(0, terminatorMatch.index);
+      } else if (content.endsWith('"')) {
+        // 如果流正好以引号结束，可能也是结束
+        content = content.slice(0, -1);
       }
+      
+      setDisplayedText(decodeAiText(content));
     } else if (!fullText.startsWith('{')) {
-      // 如果不是 JSON 格式，直接原样显示
+      // 兼容非 JSON 格式的纯文本流
       setDisplayedText(decodeAiText(fullText));
     }
 
-    // 2. 尝试提取雷达图数据 (针对 "radar_stats":{...})
-    const radarMarker = '"radar_stats":';
-    const radarStart = fullText.indexOf(radarMarker);
-    if (radarStart !== -1) {
-      const braceStart = fullText.indexOf('{', radarStart);
-      const braceEnd = fullText.indexOf('}', braceStart);
-      if (braceStart !== -1 && braceEnd !== -1) {
-        try {
-          const statsJson = fullText.slice(braceStart, braceEnd + 1);
-          const parsed = JSON.parse(statsJson);
-          setRadarStats(prev => ({ ...prev, ...parsed }));
-        } catch (e) {
-          // 部分解析失败不影响 UI
-        }
+    // 2. 动态同步雷达图数据
+    const radarMatch = fullText.match(/"radar_stats"\s*:\s*({[^}]+})/);
+    if (radarMatch) {
+      try {
+        const stats = JSON.parse(radarMatch[1]);
+        setRadarStats(prev => ({ ...prev, ...stats }));
+      } catch (e) {
+        // 忽略解析中的片段错误
       }
     }
   };
@@ -107,16 +98,12 @@ const TaskAnalysis: React.FC = () => {
         processChunk(chunk);
       });
     } catch (err: any) {
-      console.error(err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // 已移除：自动执行分析的 useEffect
-
-  // 格式化雷达图数据
   const chartData = [
     { subject: '执行力', A: radarStats.execution, fullMark: 100 },
     { subject: '规划感', A: radarStats.planning, fullMark: 100 },
@@ -124,6 +111,59 @@ const TaskAnalysis: React.FC = () => {
     { subject: '专注度', A: radarStats.focus, fullMark: 100 },
     { subject: '预估准度', A: radarStats.estimation_accuracy, fullMark: 100 },
   ];
+
+  // 渲染格式化的行内容
+  const renderFormattedLines = (text: string) => {
+    // 首先按显式换行符切分
+    const rawLines = text.split('\n');
+    const finalElements: React.ReactNode[] = [];
+
+    rawLines.forEach((line, lineIdx) => {
+      if (!line.trim()) return;
+
+      // 针对“总评：”可能出现在行中的情况进行二次拆分
+      const sections = line.split(/(维度简评：|建议：|总评：)/);
+      let currentHeader = "";
+
+      sections.forEach((segment, segIdx) => {
+        const trimmed = segment.trim();
+        if (!trimmed) return;
+
+        if (trimmed === '维度简评：' || trimmed === '建议：' || trimmed === '总评：') {
+          currentHeader = trimmed.replace('：', '');
+        } else {
+          if (currentHeader) {
+            finalElements.push(
+              <div key={`${lineIdx}-${segIdx}`} className="mb-6 animate-in slide-in-from-left-4 duration-500">
+                <span className="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs font-black mb-3 uppercase tracking-wider border border-indigo-500/10">
+                  {currentHeader}
+                </span>
+                <p className="text-slate-100 font-bold text-lg leading-relaxed ml-1">{trimmed}</p>
+              </div>
+            );
+            currentHeader = ""; // 重置
+          } else if (trimmed.match(/^\d\)/)) {
+            // 处理数字列表建议
+            finalElements.push(
+              <div key={`${lineIdx}-${segIdx}`} className="flex gap-4 ml-4 mb-4 group">
+                <span className="text-indigo-400 font-black shrink-0 group-hover:scale-110 transition-transform">{trimmed.slice(0, 2)}</span>
+                <span className="text-slate-300 font-medium">{trimmed.slice(2).trim()}</span>
+              </div>
+            );
+          } else {
+            // 普通段落
+            finalElements.push(
+              <p key={`${lineIdx}-${segIdx}`} className="mb-4 text-slate-300 leading-relaxed font-medium">
+                {trimmed}
+              </p>
+            );
+          }
+        }
+      });
+    });
+
+    return finalElements;
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -140,14 +180,14 @@ const TaskAnalysis: React.FC = () => {
         <button 
           onClick={performAnalysis}
           disabled={loading}
-          className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black transition-all disabled:opacity-50 group shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black transition-all disabled:opacity-50 group shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         >
           {loading ? (
-            <RefreshCw size={18} className="animate-spin" />
+            <RefreshCw size={20} className="animate-spin" />
           ) : (
-            <Play size={18} fill="currentColor" />
+            <Play size={20} fill="currentColor" />
           )}
-          {loading ? 'AI 推演中...' : '开始 AI 诊断分析'}
+          {loading ? '核心演化推演中...' : '开始 AI 诊断分析'}
         </button>
       </div>
 
@@ -174,85 +214,63 @@ const TaskAnalysis: React.FC = () => {
               </RadarChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-6 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center px-4">基于 AI 对执行链路的量化建模</p>
+          <p className="mt-6 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center px-4">基于执行链路数据自动生成的量化模型</p>
         </div>
 
-        <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/5 flex flex-col">
-          <div className="absolute top-0 right-0 p-12 opacity-[0.03] rotate-12 pointer-events-none">
-            <Sparkles size={280} />
-          </div>
-          
-          <div className="relative z-10 space-y-8 flex-1 flex flex-col">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 bg-indigo-500/20 border border-indigo-400/30 px-5 py-2 rounded-full">
-                <Sparkles size={16} className="text-indigo-400" />
-                <span className="text-xs font-black uppercase tracking-widest text-indigo-100">AI 智能诊断报告</span>
-              </div>
-              {loading && (
-                <div className="flex gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
-                  <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                </div>
-              )}
+        <div className="lg:col-span-2 bg-[#0f172a] rounded-[2.5rem] p-1 shadow-2xl overflow-hidden min-h-[500px] flex flex-col">
+          <div className="bg-white/5 backdrop-blur-3xl p-10 flex-1 flex flex-col relative">
+            <div className="absolute top-0 right-0 p-12 opacity-[0.03] rotate-12 pointer-events-none">
+              <Quote size={240} className="text-white" />
             </div>
 
-            {error ? (
-              <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-3xl flex items-start gap-4">
-                <AlertCircle className="text-rose-400 shrink-0 mt-1" size={24} />
-                <div>
-                  <h4 className="font-black text-rose-200 mb-2">服务通信异常</h4>
-                  <p className="text-rose-100/70 text-sm leading-relaxed font-medium">{error}</p>
+            <div className="relative z-10 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3 bg-indigo-500/20 border border-indigo-400/30 px-5 py-2 rounded-full">
+                  <Sparkles size={16} className="text-indigo-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-indigo-100">AI 智能诊断报告</span>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white/[0.03] backdrop-blur-3xl rounded-3xl p-8 border border-white/10 flex-1 overflow-y-auto custom-scrollbar">
-                {displayedText ? (
-                  <div className="prose prose-invert max-w-none">
-                    <div className="text-lg leading-relaxed text-slate-200 font-medium whitespace-pre-wrap">
-                      {displayedText.split('\n').map((line, idx) => {
-                        const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        
-                        if (line.startsWith('维度简评：') || line.startsWith('建议：') || line.startsWith('总评：')) {
-                          return (
-                            <div key={idx} className="mb-6 first:mt-0">
-                              <span className="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs font-black mb-2 uppercase tracking-wider border border-indigo-500/10">
-                                {line.split('：')[0]}
-                              </span>
-                              <p className="text-slate-100 font-bold ml-1">{line.split('：')[1]}</p>
-                            </div>
-                          );
-                        }
-                        
-                        if (line.match(/^\d\)/)) {
-                          return (
-                            <div key={idx} className="flex gap-3 ml-4 mb-3">
-                              <span className="text-indigo-400 font-black shrink-0">{line.slice(0, 2)}</span>
-                              <span className="text-slate-300">{line.slice(2).trim()}</span>
-                            </div>
-                          );
-                        }
-
-                        return <p key={idx} className="mb-4 text-slate-300 last:mb-0" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
-                      })}
-                      {loading && <span className="inline-block w-1.5 h-5 bg-indigo-400 animate-pulse ml-1 translate-y-1"></span>}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-6">
-                    <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center text-indigo-400 border border-indigo-500/20 animate-pulse">
-                      <BarChart3 size={40} />
-                    </div>
-                    <div className="text-center">
-                      <p className="font-black text-slate-200 text-xl mb-2">准备好进行深度诊断了吗？</p>
-                      <p className="text-slate-500 font-medium max-w-xs mx-auto">
-                        点击上方“开始 AI 诊断分析”按钮，我将基于您的待办事项和目标执行情况，生成专属的效能报告。
-                      </p>
-                    </div>
+                {loading && (
+                  <div className="flex gap-2">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse delay-150"></div>
                   </div>
                 )}
               </div>
-            )}
+
+              {error ? (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-3xl flex items-start gap-4">
+                  <AlertCircle className="text-rose-400 shrink-0 mt-1" size={24} />
+                  <div>
+                    <h4 className="font-black text-rose-200 mb-2">服务通信异常</h4>
+                    <p className="text-rose-100/70 text-sm leading-relaxed font-medium">{error}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
+                  {displayedText ? (
+                    <div className="prose prose-invert max-w-none">
+                      {renderFormattedLines(displayedText)}
+                      {loading && (
+                        <div className="inline-block w-2 h-6 bg-indigo-500 animate-pulse ml-2 translate-y-1"></div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-6">
+                      <div className="w-24 h-24 bg-indigo-500/5 rounded-[2rem] flex items-center justify-center text-indigo-400 border border-indigo-500/10 animate-pulse">
+                        <BarChart3 size={48} />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-slate-200 text-xl mb-2 tracking-tight">准备好进行深度诊断了吗？</p>
+                        <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
+                          点击上方按钮，系统将扫描您的所有战略目标与待办事项，构建完整的效能画像。
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
