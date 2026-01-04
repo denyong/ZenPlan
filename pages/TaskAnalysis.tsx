@@ -9,7 +9,8 @@ import {
   AlertCircle,
   BarChart3,
   Play,
-  Quote
+  Quote,
+  ArrowRight
 } from 'lucide-react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, 
@@ -32,7 +33,6 @@ const TaskAnalysis: React.FC = () => {
 
   const rawBuffer = useRef("");
 
-  // 针对后端 JSON 转义字符的解码处理
   const decodeAiText = (str: string) => {
     if (!str) return "";
     try {
@@ -51,7 +51,6 @@ const TaskAnalysis: React.FC = () => {
     rawBuffer.current += chunk;
     const fullText = rawBuffer.current;
 
-    // 匹配分析内容（兼容后端 data.analysis 结构）
     const analysisMatch = fullText.match(/"analysis"\s*:\s*"/);
     if (analysisMatch && analysisMatch.index !== undefined) {
       const startPos = analysisMatch.index + analysisMatch[0].length;
@@ -69,7 +68,6 @@ const TaskAnalysis: React.FC = () => {
       setDisplayedText(decodeAiText(fullText));
     }
 
-    // 匹配雷达图分值
     const radarMatch = fullText.match(/"radar_stats"\s*:\s*({[^}]+})/);
     if (radarMatch) {
       try {
@@ -118,106 +116,119 @@ const TaskAnalysis: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-12 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black flex items-center gap-3 tracking-tight">
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-2xl shadow-sm">
-              <BrainCircuit size={28} />
+          <h1 className="text-4xl font-black flex items-center gap-4 tracking-tight text-slate-900">
+            <div className="p-3 bg-indigo-600 text-white rounded-[1.25rem] shadow-xl shadow-indigo-100">
+              <BrainCircuit size={32} />
             </div>
-            任务智能分析
+            AI 效能诊断系统
           </h1>
-          <p className="text-slate-500 font-medium mt-1">AI 深度剖析您的执行链路。冷静规划，极致执行。</p>
+          <p className="text-slate-500 font-medium mt-2 text-lg">基于底层执行逻辑的深度审计。冷静规划，极致执行。</p>
         </div>
         <button 
           onClick={performAnalysis}
           disabled={loading}
-          className={`flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black transition-all disabled:opacity-50 group shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`flex items-center gap-3 px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg transition-all disabled:opacity-50 group shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 active:translate-y-0 ${loading ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          {loading ? <RefreshCw size={20} className="animate-spin" /> : <Play size={20} fill="currentColor" />}
-          {loading ? '正在进行深度审计...' : '启动 AI 效能诊断'}
+          {loading ? <RefreshCw size={24} className="animate-spin" /> : <Play size={24} fill="currentColor" />}
+          {loading ? '正在审计行为模式...' : '启动 AI 诊断'}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 数据面板 */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
-          <h3 className="text-lg font-black mb-8 w-full flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
-            量化效能画像
-          </h3>
-          <div className="w-full h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                <PolarGrid stroke="#f1f5f9" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar
-                  name="AI Score"
-                  dataKey="A"
-                  stroke="#6366f1"
-                  strokeWidth={4}
-                  fill="#6366f1"
-                  fillOpacity={0.15}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {chartData.map(d => (
-              <div key={d.subject} className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg">
-                <span className="text-[10px] font-black text-slate-400">{d.subject}</span>
-                <span className="text-xs font-black text-indigo-600">{d.A}</span>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+        {/* 左侧：量化面板 */}
+        <div className="xl:col-span-4 space-y-8">
+          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl flex flex-col items-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+            <h3 className="text-xl font-black mb-10 w-full flex items-center justify-between">
+              <span className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
+                核心效能画像
+              </span>
+              <BarChart3 className="text-slate-200" size={24} />
+            </h3>
+            
+            <div className="w-full h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                  <PolarGrid stroke="#f1f5f9" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar
+                    name="AI Score"
+                    dataKey="A"
+                    stroke="#6366f1"
+                    strokeWidth={4}
+                    fill="#6366f1"
+                    fillOpacity={0.1}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="w-full mt-10 grid grid-cols-2 gap-3">
+              {chartData.map(d => (
+                <div key={d.subject} className="flex flex-col p-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] transition-all hover:bg-indigo-50 hover:border-indigo-100 group">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-indigo-400">{d.subject}</span>
+                  <span className="text-2xl font-black text-slate-900 group-hover:text-indigo-600">{d.A}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* 报告面板 - 强化背景与文字对比 */}
-        <div className="lg:col-span-2 bg-[#020617] rounded-[2.5rem] shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative group border border-white/5">
-          <div className="absolute top-0 right-0 p-12 opacity-[0.04] rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-[3000ms]">
-            <Quote size={240} className="text-white" />
+        {/* 右侧：报告展示面板 */}
+        <div className="xl:col-span-8 bg-[#020617] rounded-[3.5rem] shadow-2xl overflow-hidden min-h-[700px] flex flex-col relative group glow-border border border-white/5">
+          {/* 背景径向发光装饰 */}
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.08),transparent_50%)]"></div>
+          
+          <div className="absolute top-0 right-0 p-16 opacity-[0.05] rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-[4000ms]">
+            <Quote size={300} className="text-white" />
           </div>
 
-          <div className="p-1 w-full h-full flex flex-col flex-1">
-             <div className="p-10 flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-400/20 px-5 py-2.5 rounded-full">
-                  <Sparkles size={16} className="text-indigo-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-indigo-300">AI 深度诊断报告</span>
-                </div>
+          <div className="relative z-10 flex-1 flex flex-col p-12 md:p-16">
+            <div className="flex items-center justify-between mb-16">
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-3 rounded-full backdrop-blur-md">
+                <Sparkles size={20} className="text-indigo-400" />
+                <span className="text-sm font-black uppercase tracking-[0.2em] text-indigo-300">Advanced Audit Report</span>
               </div>
+              <div className="hidden md:flex items-center gap-2 text-slate-500 font-bold text-xs">
+                CALMEXEC ANALYSIS ENGINE V3.0
+              </div>
+            </div>
 
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-6">
               {error ? (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-8 rounded-3xl flex items-start gap-4">
-                  <AlertCircle className="text-rose-400 shrink-0 mt-1" size={24} />
+                <div className="bg-rose-500/10 border border-rose-500/20 p-10 rounded-[2.5rem] flex items-start gap-6">
+                  <AlertCircle className="text-rose-400 shrink-0 mt-1" size={32} />
                   <div>
-                    <h4 className="font-black text-rose-200 mb-2">审计链路异常</h4>
-                    <p className="text-rose-100/70 text-sm leading-relaxed font-medium">{error}</p>
+                    <h4 className="font-black text-rose-100 text-xl mb-3">审计链路中断</h4>
+                    <p className="text-rose-100/70 text-lg leading-relaxed font-medium">{error}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
-                  {displayedText ? (
-                    <div className="markdown-body">
-                      <ReactMarkdown>{displayedText}</ReactMarkdown>
-                      {loading && (
-                        <span className="inline-block w-2.5 h-6 bg-indigo-500 animate-pulse ml-2 translate-y-1"></span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-6">
-                      <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center text-slate-600 border border-white/5 animate-pulse">
-                        <BarChart3 size={48} />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-black text-slate-200 text-xl mb-2 tracking-tight">等待启动深度审计...</p>
-                        <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                          系统将绕过多余的 UI 装饰，直接呈现由 AI 生成的高对比度分析报告。
-                        </p>
-                      </div>
+              ) : displayedText ? (
+                <div className="markdown-body animate-in slide-in-from-bottom-4 duration-700">
+                  <ReactMarkdown>{displayedText}</ReactMarkdown>
+                  {loading && (
+                    <div className="mt-8 flex items-center gap-3 text-indigo-400 font-black animate-pulse">
+                      <ArrowRight size={20} />
+                      正在实时注入进化建议...
                     </div>
                   )}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center py-20 text-slate-500 space-y-8">
+                  <div className="w-32 h-32 bg-white/5 rounded-[3rem] flex items-center justify-center text-slate-700 border border-white/5 animate-pulse">
+                    <BarChart3 size={56} />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-black text-slate-200 text-3xl mb-4 tracking-tight">准备进行深度审计</h3>
+                    <p className="text-slate-500 font-medium max-w-md mx-auto leading-relaxed text-lg">
+                      系统已准备好从你的任务历史中提取模式。点击上方按钮，启动基于 Markdown 架构的高性能分析呈现。
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

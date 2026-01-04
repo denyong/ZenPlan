@@ -19,37 +19,89 @@
       width: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.03);
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
       border-radius: 10px;
     }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
-    }
-    .animate-shake {
-      animation: shake 0.2s ease-in-out 0s 2;
+    
+    /* 高级 Markdown 排版样式 */
+    .markdown-body {
+      color: #e2e8f0; /* Slate-200 */
+      line-height: 2; /* 增加行高，减少紧凑感 */
+      font-size: 1.1rem;
     }
     
-    /* 优化 Markdown 样式 - 极致对比度版 */
-    .markdown-body {
-      color: #f1f5f9; /* Slate-100 */
-      line-height: 1.8;
-      font-size: 1.05rem;
+    .markdown-body h2 { 
+      @apply text-2xl font-black mt-16 mb-8 text-white flex items-center gap-3 tracking-tight;
+      color: #818cf8; /* Indigo-400 */
     }
-    .markdown-body h1 { @apply text-3xl font-black mb-8 border-b border-white/20 pb-4 text-white tracking-tight; }
-    .markdown-body h2 { @apply text-2xl font-black mt-10 mb-6 text-indigo-400 flex items-center gap-3 tracking-tight; }
-    .markdown-body h2::before { content: ""; @apply w-1.5 h-6 bg-indigo-500 rounded-full inline-block; }
-    .markdown-body p { @apply mb-5 text-slate-200 font-medium; }
-    .markdown-body ul, .markdown-body ol { @apply mb-8 ml-6 space-y-3 text-slate-200 list-disc; }
-    .markdown-body li { @apply pl-1; }
-    .markdown-body li strong { @apply text-white font-bold; }
-    .markdown-body blockquote { @apply border-l-4 border-indigo-500 bg-white/5 px-6 py-4 italic text-indigo-200 rounded-r-2xl mb-8 font-medium; }
-    .markdown-body strong { @apply text-indigo-300 font-black px-1; }
-    .markdown-body hr { @apply border-white/10 my-10; }
+    
+    /* 为二级标题添加装饰线 */
+    .markdown-body h2::before { 
+      content: ""; 
+      @apply w-1.5 h-8 bg-indigo-500 rounded-full inline-block; 
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+    }
+
+    .markdown-body p { 
+      @apply mb-8 text-slate-300 font-medium; 
+    }
+
+    /* 列表美化 */
+    .markdown-body ul { 
+      @apply mb-12 space-y-5; 
+    }
+    
+    .markdown-body li { 
+      @apply pl-2 flex items-start gap-3;
+      list-style-type: none;
+    }
+    
+    .markdown-body ul li::before {
+      content: "•";
+      @apply text-indigo-500 font-black text-xl leading-none mt-1;
+    }
+
+    .markdown-body ol {
+      @apply mb-12 space-y-6;
+      counter-reset: item;
+    }
+
+    .markdown-body ol li {
+      @apply pl-0 flex flex-col items-start gap-1;
+      counter-increment: item;
+      list-style-type: none;
+    }
+
+    .markdown-body ol li::before {
+      content: counter(item) ". ";
+      @apply text-indigo-400 font-black text-sm uppercase tracking-widest mb-1;
+    }
+
+    .markdown-body strong { 
+      @apply text-white font-black px-1 rounded;
+      background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .markdown-body hr { 
+      @apply border-white/5 my-12; 
+    }
+
+    /* 改进文字对比度，适配特定强调语境 */
+    .markdown-body li strong {
+      @apply text-indigo-200 bg-transparent px-0;
+    }
+
+    @keyframes pulse-border {
+      0% { border-color: rgba(99, 102, 241, 0.1); }
+      50% { border-color: rgba(99, 102, 241, 0.3); }
+      100% { border-color: rgba(99, 102, 241, 0.1); }
+    }
+    .glow-border {
+      animation: pulse-border 3s infinite ease-in-out;
+    }
   </style>
 <script type="importmap">
 {
