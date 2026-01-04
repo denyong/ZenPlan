@@ -26,12 +26,12 @@ export interface User {
 }
 
 export interface Goal {
-  id: string;
-  user_id: string;
+  id: string | number;
+  user_id: string | number;
   title: string;
   description: string;
   level: GoalLevel;
-  parent_id?: string;
+  parent_id?: string | number;
   progress: number;
   status: Status;
   deadline?: string;
@@ -40,14 +40,14 @@ export interface Goal {
 }
 
 export interface Todo {
-  id: string;
-  user_id: string;
-  goal_id?: string;
+  id: string | number;
+  user_id: string | number;
+  goal_id?: string | number;
   title: string;
   description?: string;
   priority: Priority;
   estimated_time: number; // 分钟
-  is_completed: boolean;
+  is_completed: boolean | number; // 兼容 tinyint(1)
   due_date: string;
   completed_at?: string;
   created_at: string;
@@ -55,8 +55,8 @@ export interface Todo {
 }
 
 export interface WeeklyReview {
-  id: string;
-  user_id: string;
+  id: string | number;
+  user_id: string | number;
   year: number;
   week_number: number;
   wins_content: string;
@@ -64,11 +64,4 @@ export interface WeeklyReview {
   next_focus_content: string;
   summary_ai?: string;
   created_at: string;
-}
-
-export interface StatCompareItem {
-  label: string;
-  current: number;
-  previous: number;
-  changeRate: number;
 }

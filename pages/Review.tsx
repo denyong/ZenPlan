@@ -14,14 +14,14 @@ import {
   X,
   Loader2,
   TrendingUp,
-  Target
+  Target,
+  Quote
 } from 'lucide-react';
-import { analyzeReviewTrends } from '../geminiService.ts';
 
 const Review: React.FC = () => {
-  const { todos, reviews, saveReview, fetchReviews } = useStore();
+  const { todos, reviews, saveReview, fetchReviews, fetchTrendReport } = useStore();
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
-  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
+  const [selectedReviewId, setSelectedReviewId] = useState<string | number | null>(null);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -29,6 +29,7 @@ const Review: React.FC = () => {
     fetchReviews();
   }, [fetchReviews]);
 
+  // 计算当前周信息 (ISO-8601)
   const currentInfo = useMemo(() => {
     const now = new Date();
     const target = new Date(now.valueOf());
@@ -54,6 +55,18 @@ const Review: React.FC = () => {
 
   const [isSaved, setIsSaved] = useState(false);
 
+  // 加载已有数据
+  useEffect(() => {
+    const existing = reviews.find(r => r.year === currentInfo.year && r.week_number === currentInfo.week);
+    if (existing) {
+      setFormData({
+        wins_content: existing.wins_content || '',
+        obstacles_content: existing.obstacles_content || '',
+        next_focus_content: existing.next_focus_content || ''
+      });
+    }
+  }, [reviews, currentInfo]);
+
   const handleSave = async () => {
     await saveReview({
       year: currentInfo.year,
@@ -65,19 +78,14 @@ const Review: React.FC = () => {
   };
 
   const handleAnalyzeTrends = async () => {
-    if (reviews.length < 2) return;
+    if (reviews.length < 1) return;
     setAnalyzing(true);
     try {
-      const simplified = reviews.map(r => ({
-        week: r.week_number,
-        wins: r.wins_content,
-        obstacles: r.obstacles_content,
-        focus: r.next_focus_content
-      }));
-      const result = await analyzeReviewTrends(JSON.stringify(simplified));
+      // 优先对接后端接口，不再直接调用客户端 Gemini
+      const result = await fetchTrendReport();
       setAiInsight(result);
-    } catch (err) {
-      setAiInsight("分析失败，请检查网络或配置。");
+    } catch (err: any) {
+      setAiInsight(`分析失败: ${err.message}`);
     } finally {
       setAnalyzing(false);
     }
@@ -86,22 +94,26 @@ const Review: React.FC = () => {
   const selectedReview = reviews.find(r => r.id === selectedReviewId);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">灵魂复盘与成长档案</h1>
-          <p className="text-slate-500 mt-1">每一周的总结，都是通往卓越的必经之路。</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            复盘与进化
+            <div className="px-3 py-1 bg-indigo-600 text-white text-[10px] rounded-full uppercase tracking-widest">Growth Engine</div>
+          </h1>
+          <p className="text-slate-500 font-medium mt-1">记录每周轨迹，识别执行模式，推动自我进化。</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-2xl">
+        <div className="flex bg-white shadow-sm border border-slate-200 p-1.5 rounded-2xl">
           <button 
             onClick={() => setActiveTab('current')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all ${activeTab === 'current' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'current' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <BookOpen size={18} /> 本周总结
           </button>
           <button 
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <History size={18} /> 成长档案
           </button>
@@ -109,172 +121,223 @@ const Review: React.FC = () => {
       </div>
 
       {activeTab === 'current' ? (
-        <div className="space-y-10">
-          <div className="text-center space-y-4 py-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full font-extrabold text-xs tracking-widest uppercase">
-              <Calendar size={16} />
-              {currentInfo.year}年 第{currentInfo.week}周
+        <div className="space-y-8">
+          {/* Current Week Banner */}
+          <div className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm overflow-hidden relative">
+            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-indigo-50 rounded-full opacity-50"></div>
+            <div className="relative z-10 text-center md:text-left">
+              <span className="text-indigo-600 font-black text-xs uppercase tracking-widest mb-1 block">Current Cycle</span>
+              <h2 className="text-3xl font-black text-slate-900">{currentInfo.year}年 第{currentInfo.week}周复盘</h2>
+              <p className="text-slate-400 font-medium mt-1">回顾本周数据，深挖执行背后的逻辑。</p>
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-slate-900">此刻，请与真实的自己对话。</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700"></div>
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-emerald-600 relative z-10">
-                <CheckCircle size={24} />
-                高光成就
-              </h3>
-              <ul className="space-y-4 relative z-10">
-                {completed.slice(0, 5).map((win, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-600 font-medium">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                    {win}
-                  </li>
-                ))}
-                {completed.length === 0 && <li className="text-slate-400 italic text-sm">本周尚未解锁成就</li>}
-              </ul>
-            </div>
-
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700"></div>
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-rose-600 relative z-10">
-                <MessageSquare size={24} />
-                挑战与阻碍
-              </h3>
-              <ul className="space-y-4 relative z-10">
-                {pending.slice(0, 5).map((p, i) => (
-                  <li key={i} className="flex items-start gap-3 text-slate-600 font-medium">
-                    <div className="w-2 h-2 bg-rose-400 rounded-full mt-2 flex-shrink-0"></div>
-                    {p}
-                  </li>
-                ))}
-                {pending.length === 0 && <li className="text-slate-400 italic text-sm">本周战无不胜！</li>}
-              </ul>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { key: "wins_content", q: "哪些事做得好？", a: "列出 3 个成功的关键点...", icon: <Sparkles className="text-amber-500" size={18}/> },
-              { key: "obstacles_content", q: "遇到了哪些阻碍？", a: "识别导致延期的瓶颈因素...", icon: <MessageSquare className="text-indigo-500" size={18}/> },
-              { key: "next_focus_content", q: "下周的头等大事？", a: "定义下周最核心的一个目标...", icon: <Target className="text-emerald-500" size={18}/> },
-            ].map((item, i) => (
-              <div key={i} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  {item.icon}
-                  <h4 className="font-bold text-slate-900">{item.q}</h4>
-                </div>
-                <textarea 
-                  value={(formData as any)[item.key]}
-                  onChange={(e) => setFormData({...formData, [item.key]: e.target.value})}
-                  placeholder={item.a}
-                  className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 h-40 resize-none transition-all"
-                ></textarea>
+            <div className="flex items-center gap-8 relative z-10">
+              <div className="text-center">
+                <p className="text-2xl font-black text-emerald-500">{completed.length}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">已达成成就</p>
               </div>
-            ))}
+              <div className="w-px h-10 bg-slate-100"></div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-rose-500">{pending.length}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">待复盘阻碍</p>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex justify-center">
-            <button 
-              onClick={handleSave}
-              className={`px-12 py-5 rounded-3xl font-black text-xl shadow-2xl transition-all flex items-center gap-3 ${
-                isSaved ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white hover:-translate-y-1'
-              }`}
-            >
-              {isSaved ? <><CheckCircle size={24} /> 复盘已归档</> : <>保存并结束本周复盘 <Send size={20} /></>}
-            </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              {[
+                { key: "wins_content", title: "本周高光时刻", desc: "哪些事情超出了预期？核心成功因素是什么？", icon: <Sparkles className="text-amber-500" />, color: "border-emerald-100" },
+                { key: "obstacles_content", title: "核心阻碍与教训", desc: "遇到了什么瓶颈？如果重来一次你会怎么做？", icon: <MessageSquare className="text-rose-500" />, color: "border-rose-100" },
+                { key: "next_focus_content", title: "下周唯一重心", desc: "如果下周只能做成一件事，那会是什么？", icon: <Target className="text-indigo-500" />, color: "border-indigo-100" },
+              ].map((item, i) => (
+                <div key={i} className={`bg-white p-8 rounded-[32px] border ${item.color} shadow-sm transition-all hover:shadow-md space-y-4`}>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 rounded-xl">{item.icon}</div>
+                    <div>
+                      <h4 className="font-black text-slate-900 tracking-tight">{item.title}</h4>
+                      <p className="text-xs text-slate-400 font-medium">{item.desc}</p>
+                    </div>
+                  </div>
+                  <textarea 
+                    value={(formData as any)[item.key]}
+                    onChange={(e) => setFormData({...formData, [item.key]: e.target.value})}
+                    placeholder="输入你的思考..."
+                    className="w-full bg-slate-50 border-none rounded-2xl p-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 h-32 resize-none transition-all"
+                  ></textarea>
+                </div>
+              ))}
+              
+              <div className="flex justify-end pt-4">
+                <button 
+                  onClick={handleSave}
+                  className={`px-10 py-4 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center gap-3 ${
+                    isSaved ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:-translate-y-1 hover:shadow-2xl'
+                  }`}
+                >
+                  {isSaved ? <><CheckCircle size={24} /> 复盘归档成功</> : <>归档本周成长数据 <Send size={20} /></>}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Quote size={80}/></div>
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 relative z-10">
+                  <Sparkles size={20} className="text-amber-400" />
+                  回顾参考
+                </h3>
+                <div className="space-y-4 relative z-10">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">本周已完成</p>
+                    <div className="flex flex-wrap gap-2">
+                      {completed.slice(0, 3).map((t, i) => (
+                        <span key={i} className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold">{t}</span>
+                      ))}
+                      {completed.length > 3 && <span className="text-[10px] font-bold text-slate-500">+{completed.length - 3}</span>}
+                      {completed.length === 0 && <span className="text-xs text-slate-500">暂无完成任务</span>}
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">待跟进阻碍</p>
+                    <div className="flex flex-wrap gap-2">
+                      {pending.slice(0, 3).map((t, i) => (
+                        <span key={i} className="px-3 py-1 bg-rose-500/20 text-rose-200 rounded-lg text-[10px] font-bold">{t}</span>
+                      ))}
+                      {pending.length === 0 && <span className="text-xs text-slate-500">本周无遗留任务</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 border border-indigo-100 rounded-[32px] p-8 space-y-4">
+                <h4 className="font-bold text-indigo-900 flex items-center gap-2">
+                  <BrainCircuit size={20} />
+                  复盘贴士
+                </h4>
+                <p className="text-xs text-indigo-700 leading-relaxed">
+                  真正的成长来自于“痛苦 + 反思”。不要只记录成功的喜悦，要深入分析那些让你感到困难或拖延的时刻。
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 历史列表 */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-1">历程时间轴</h3>
-            <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Timeline Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">成长时间轴</h3>
+              <span className="text-[10px] font-bold text-slate-300">{reviews.length} 份档案</span>
+            </div>
+            <div className="space-y-3 custom-scrollbar overflow-y-auto max-h-[600px] pr-2">
               {reviews.length === 0 ? (
-                <div className="p-8 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
-                  暂无历史记录
+                <div className="p-8 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-sm">
+                  尚未归档任何复盘记录
                 </div>
               ) : reviews.map(r => (
                 <button
                   key={r.id}
                   onClick={() => setSelectedReviewId(r.id)}
-                  className={`w-full p-5 text-left rounded-[24px] border transition-all flex items-center justify-between group ${
-                    selectedReviewId === r.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100' : 'bg-white border-slate-100 hover:border-indigo-200'
+                  className={`w-full p-6 text-left rounded-[28px] border transition-all flex items-center justify-between group ${
+                    selectedReviewId === r.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100 translate-x-1' : 'bg-white border-slate-100 hover:border-indigo-200'
                   }`}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase opacity-70">{r.year}年</span>
-                    <span className="text-lg font-black tracking-tight">第 {r.week_number} 周复盘</span>
+                    <span className="text-[10px] font-black uppercase opacity-60">{r.year} Year</span>
+                    <span className="text-lg font-black tracking-tight">Week {r.week_number}</span>
                   </div>
-                  <ChevronRight size={20} className={selectedReviewId === r.id ? 'text-white' : 'text-slate-300'} />
+                  <ChevronRight size={20} className={selectedReviewId === r.id ? 'text-white' : 'text-slate-300 group-hover:text-indigo-600'} />
                 </button>
               ))}
             </div>
 
-            {reviews.length >= 2 && (
+            {reviews.length >= 1 && (
               <button 
                 onClick={handleAnalyzeTrends}
                 disabled={analyzing}
-                className="w-full mt-6 py-5 bg-indigo-50 text-indigo-600 rounded-[24px] font-black text-sm flex items-center justify-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100"
+                className="w-full mt-4 py-5 bg-slate-900 text-white rounded-[28px] font-black text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-100 disabled:opacity-50"
               >
                 {analyzing ? <Loader2 size={18} className="animate-spin" /> : <BrainCircuit size={18} />}
-                AI 进化趋势洞察
+                AI 进化趋势诊断
               </button>
             )}
           </div>
 
-          {/* 详情或 AI 板块 */}
-          <div className="lg:col-span-2">
+          {/* Detailed Content */}
+          <div className="lg:col-span-3">
             {aiInsight ? (
-              <div className="bg-indigo-900 text-white p-8 rounded-[40px] shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4">
-                <div className="absolute top-0 right-0 p-8 opacity-10"><BrainCircuit size={120}/></div>
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full">
+              <div className="bg-indigo-900 text-white p-10 rounded-[48px] shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-8">
+                <div className="absolute top-0 right-0 p-12 opacity-10"><BrainCircuit size={160}/></div>
+                <div className="flex justify-between items-start mb-10 relative z-10">
+                  <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-full border border-white/10">
                     <TrendingUp size={20} className="text-amber-400" />
-                    <span className="text-sm font-black uppercase tracking-widest">多周成长进化报告</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Growth Evolution Report</span>
                   </div>
-                  <button onClick={() => setAiInsight(null)} className="p-2 hover:bg-white/10 rounded-full"><X size={20}/></button>
+                  <button onClick={() => setAiInsight(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={24}/></button>
                 </div>
-                <div className="prose prose-invert max-w-none">
-                  <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 leading-relaxed font-medium">
+                <div className="relative z-10">
+                  <div className="bg-white/5 backdrop-blur-xl rounded-[32px] p-10 border border-white/10 leading-relaxed font-medium text-indigo-50 text-lg whitespace-pre-wrap">
                     {aiInsight}
                   </div>
                 </div>
               </div>
             ) : selectedReview ? (
-              <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm space-y-8 animate-in fade-in">
-                <div className="flex justify-between items-center pb-6 border-b border-slate-50">
-                  <h3 className="text-2xl font-black text-slate-900">{selectedReview.year}W{selectedReview.week_number} 深度档案</h3>
-                  <div className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black text-slate-400">ARCHIVED</div>
+              <div className="bg-white p-12 rounded-[48px] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
+                <div className="flex justify-between items-end pb-8 border-b border-slate-50">
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900">{selectedReview.year}W{selectedReview.week_number} 深度档案</h3>
+                    <p className="text-slate-400 text-sm mt-1">归档于 {new Date(selectedReview.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="px-6 py-2 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-black text-slate-400 tracking-widest uppercase">Verified Record</div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-black text-emerald-600 uppercase tracking-widest">高光时刻</h4>
-                    <p className="p-5 bg-emerald-50/50 rounded-2xl text-slate-700 font-medium leading-relaxed">{selectedReview.wins_content || '未填写'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                      <Sparkles size={16}/> 高光时刻
+                    </h4>
+                    <div className="p-8 bg-emerald-50/30 rounded-[32px] text-slate-700 font-medium leading-relaxed border border-emerald-50 text-lg">
+                      {selectedReview.wins_content || '未记录成就'}
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-black text-rose-500 uppercase tracking-widest">核心阻碍</h4>
-                    <p className="p-5 bg-rose-50/50 rounded-2xl text-slate-700 font-medium leading-relaxed">{selectedReview.obstacles_content || '未填写'}</p>
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-rose-500 uppercase tracking-widest flex items-center gap-2">
+                      <MessageSquare size={16}/> 核心阻碍
+                    </h4>
+                    <div className="p-8 bg-rose-50/30 rounded-[32px] text-slate-700 font-medium leading-relaxed border border-rose-50 text-lg">
+                      {selectedReview.obstacles_content || '未记录阻碍'}
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-8 bg-indigo-50 rounded-[32px] border border-indigo-100">
-                  <h4 className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Target size={18} />
-                    该周设定的下周重心
+                <div className="p-10 bg-indigo-600 text-white rounded-[40px] shadow-2xl shadow-indigo-100 relative overflow-hidden group">
+                  <div className="absolute right-0 bottom-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-700"><Target size={120}/></div>
+                  <h4 className="text-xs font-black text-indigo-100 uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
+                    <Target size={20} />
+                    该周确定的进化重心
                   </h4>
-                  <p className="text-indigo-900 font-black text-xl leading-relaxed italic">
-                    “{selectedReview.next_focus_content || '未定焦点'}”
+                  <p className="text-white font-black text-3xl leading-tight tracking-tight italic relative z-10">
+                    “{selectedReview.next_focus_content || '未定义焦点'}”
                   </p>
                 </div>
+
+                {selectedReview.summary_ai && (
+                  <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <BrainCircuit size={14} /> AI 灵魂总结
+                    </h4>
+                    <p className="text-slate-600 italic font-medium">
+                      {selectedReview.summary_ai}
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-slate-300 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
-                <History size={48} className="mb-4 opacity-20" />
-                <p className="font-bold">从左侧选择一个档案开始回顾</p>
+              <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-slate-300 bg-white rounded-[48px] border-2 border-dashed border-slate-100 animate-pulse">
+                <div className="p-6 bg-slate-50 rounded-full mb-6">
+                  <History size={64} className="opacity-20" />
+                </div>
+                <p className="font-black text-xl text-slate-400">选择一份档案，开启跨时空对话</p>
               </div>
             )}
           </div>

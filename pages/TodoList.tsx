@@ -31,9 +31,18 @@ const TodoList: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [showMenuId, setShowMenuId] = useState<string | null>(null);
+  // Fix: showMenuId needs to support string | number to match Todo.id
+  const [showMenuId, setShowMenuId] = useState<string | number | null>(null);
 
-  const [formData, setFormData] = useState({
+  // Fix: goal_id can be string or number
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    goal_id: string | number;
+    due_date: string;
+    priority: Priority;
+    estimated_time: number;
+  }>({
     title: '',
     description: '',
     goal_id: '',
@@ -57,7 +66,8 @@ const TodoList: React.FC = () => {
     }
   };
 
-  const getGoalTitle = (goalId?: string) => {
+  // Fix: goalId can be string or number to match Goal.id and Todo.goal_id
+  const getGoalTitle = (goalId?: string | number) => {
     if (!goalId) return null;
     return goals.find(g => g.id === goalId)?.title;
   };

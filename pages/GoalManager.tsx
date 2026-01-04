@@ -29,7 +29,8 @@ const GoalManager: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [showMenuId, setShowMenuId] = useState<string | null>(null);
+  // Fix: showMenuId needs to support string | number to match Goal.id
+  const [showMenuId, setShowMenuId] = useState<string | number | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',

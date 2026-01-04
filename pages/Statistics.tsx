@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import { useStore } from '../store.ts';
 import { Priority } from '../types.ts';
-import { Info, TrendingUp, Calendar, Zap, PieChart as PieIcon } from 'lucide-react';
+import { TrendingUp, Calendar, Zap, PieChart as PieIcon } from 'lucide-react';
 
 const Statistics: React.FC = () => {
   const { todos, goals } = useStore();
@@ -95,9 +95,7 @@ const Statistics: React.FC = () => {
               <PieIcon className="text-indigo-600" size={20} />
               任务优先级分布
             </h2>
-            <button className="text-slate-400 hover:text-slate-600">
-              <Info size={16} />
-            </button>
+            {/* 删除了冗余的 Info 按钮 */}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             <div className="h-64">

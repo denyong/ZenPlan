@@ -23,19 +23,20 @@ interface AppState {
   // Goal Actions
   fetchGoals: (filters?: any) => Promise<void>;
   addGoal: (goal: Partial<Goal>) => Promise<void>;
-  updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
-  deleteGoal: (id: string) => Promise<void>;
+  updateGoal: (id: string | number, updates: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string | number) => Promise<void>;
 
   // Todo Actions
   fetchTodos: (filters?: any) => Promise<void>;
   addTodo: (todo: Partial<Todo>) => Promise<void>;
-  toggleTodo: (id: string) => Promise<void>;
-  updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>;
-  deleteTodo: (id: string) => Promise<void>;
+  toggleTodo: (id: string | number) => Promise<void>;
+  updateTodo: (id: string | number, updates: Partial<Todo>) => Promise<void>;
+  deleteTodo: (id: string | number) => Promise<void>;
 
   // Review Actions
   fetchReviews: () => Promise<void>;
   saveReview: (review: Partial<WeeklyReview>) => Promise<void>;
+  fetchTrendReport: () => Promise<string>;
 
   // Stats Actions
   fetchStats: () => Promise<void>;
@@ -114,9 +115,9 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      const rawData = res.data?.goals;
-      const goalsData = Array.isArray(rawData) ? rawData : [];
-      set({ goals: goalsData, loading: false, error: null });
+      // 适配后端返回结构: { data: { goals: [] } } 或 { data: [] }
+      const goalsData = res.data?.goals || res.data || [];
+      set({ goals: Array.isArray(goalsData) ? goalsData : [], loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, goals: [] });
     }
@@ -159,9 +160,8 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/todos', { params: filters });
-      const rawData = res.data?.todos;
-      const todosData = Array.isArray(rawData) ? rawData : [];
-      set({ todos: todosData, loading: false, error: null });
+      const todosData = res.data?.todos || res.data || [];
+      set({ todos: Array.isArray(todosData) ? todosData : [], loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, todos: [] });
     }
@@ -212,8 +212,8 @@ export const useStore = create<AppState>((set, get) => ({
   fetchReviews: async () => {
     try {
       const res = await apiClient('/api/v1/reviews');
-      const reviews = Array.isArray(res.data) ? res.data : (res.data?.reviews || []);
-      set({ reviews });
+      const reviews = res.data?.reviews || res.data || [];
+      set({ reviews: Array.isArray(reviews) ? reviews : [] });
     } catch (err: any) {
       console.error("Reviews fetch error:", err);
     }
@@ -228,6 +228,15 @@ export const useStore = create<AppState>((set, get) => ({
       get().fetchReviews();
     } catch (err: any) {
       set({ error: err.message });
+    }
+  },
+
+  fetchTrendReport: async () => {
+    try {
+      const res = await apiClient('/api/v1/reviews/analysis/trends');
+      return res.data?.report || res.data?.analysis_report || "暂无分析数据";
+    } catch (err: any) {
+      throw new Error(err.message || "无法获取分析报告");
     }
   },
 
