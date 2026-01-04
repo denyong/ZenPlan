@@ -38,6 +38,10 @@ interface AppState {
   saveReview: (review: Partial<WeeklyReview>) => Promise<void>;
   fetchTrendReport: () => Promise<string>;
 
+  // AI Logic (Backend-based)
+  fetchTaskAnalysis: () => Promise<string>;
+  fetchGoalBreakdown: (title: string, description: string) => Promise<any>;
+
   // Stats Actions
   fetchStats: () => Promise<void>;
 }
@@ -236,6 +240,28 @@ export const useStore = create<AppState>((set, get) => ({
       return res.data?.report || res.data?.analysis_report || "暂无分析数据";
     } catch (err: any) {
       throw new Error(err.message || "无法获取分析报告");
+    }
+  },
+
+  fetchTaskAnalysis: async () => {
+    try {
+      const res = await apiClient('/api/v1/analysis/tasks');
+      // 假设后端返回 { data: { analysis: "..." } } 或直接返回字符串
+      return res.data?.analysis || res.data?.report || res.data || "分析报告生成中...";
+    } catch (err: any) {
+      throw new Error(err.message || "无法获取任务分析报告");
+    }
+  },
+
+  fetchGoalBreakdown: async (title, description) => {
+    try {
+      const res = await apiClient('/api/v1/analysis/breakdown', {
+        method: 'POST',
+        body: JSON.stringify({ title, description }),
+      });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(err.message || "无法获取目标拆解建议");
     }
   },
 

@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store.ts';
-import { GoalLevel, Status, Goal } from '../types.ts';
-import { getGoalBreakdown } from '../geminiService.ts';
+import { GoalLevel, Goal } from '../types.ts';
 import { 
   Target, 
   MoreVertical, 
@@ -16,12 +15,11 @@ import {
   Search,
   Loader2,
   Calendar,
-  Sparkles,
-  Zap
+  Sparkles
 } from 'lucide-react';
 
 const GoalManager: React.FC = () => {
-  const { goals, addGoal, updateGoal, deleteGoal, fetchGoals, loading } = useStore();
+  const { goals, addGoal, updateGoal, deleteGoal, fetchGoals, fetchGoalBreakdown, loading } = useStore();
   const [selectedLevel, setSelectedLevel] = useState<GoalLevel | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,16 +76,24 @@ const GoalManager: React.FC = () => {
     if (!formData.title) return;
     setAiBreaking(true);
     try {
-      const result = await getGoalBreakdown(formData.title, formData.description);
+      // 改为调用 store 中的后端 API
+      const result = await fetchGoalBreakdown(formData.title, formData.description);
       if (result && result.subgoals) {
         const breakdownText = result.subgoals.map((sg: any) => `• ${sg.title}: ${sg.description}`).join('\n');
         setFormData(prev => ({
           ...prev,
-          description: prev.description ? `${prev.description}\n\n[AI 智能建议拆解]:\n${breakdownText}` : breakdownText
+          description: prev.description ? `${prev.description}\n\n[后端 AI 建议拆解]:\n${breakdownText}` : breakdownText
+        }));
+      } else if (typeof result === 'string') {
+        // 如果后端直接返回字符串
+        setFormData(prev => ({
+          ...prev,
+          description: prev.description ? `${prev.description}\n\n[后端 AI 建议拆解]:\n${result}` : result
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert("AI 拆解失败: " + error.message);
     } finally {
       setAiBreaking(false);
     }

@@ -1,56 +1,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store.ts';
-import { Priority, Status } from '../types.ts';
-import { analyzeTaskPatterns } from '../geminiService.ts';
+import { Priority } from '../types.ts';
 import { 
   BrainCircuit, 
   Sparkles, 
   TrendingUp, 
-  AlertTriangle, 
-  Lightbulb, 
-  BarChart3,
-  Clock,
-  Target,
-  ChevronRight,
   RefreshCw
 } from 'lucide-react';
 import { 
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  PieChart, Pie
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, 
+  ResponsiveContainer
 } from 'recharts';
 
 const TaskAnalysis: React.FC = () => {
-  const { todos, goals } = useStore();
+  const { todos, fetchTaskAnalysis } = useStore();
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const performAnalysis = async () => {
+    if (loading) return;
     setLoading(true);
     try {
-      const simplifiedTodos = todos.map(t => ({
-        title: t.title,
-        priority: t.priority,
-        is_completed: t.is_completed,
-        estimated_time: t.estimated_time,
-        due_date: t.due_date
-      }));
-      const result = await analyzeTaskPatterns(JSON.stringify(simplifiedTodos));
+      // 直接调用 store 封装的后端接口
+      const result = await fetchTaskAnalysis();
       setAiAnalysis(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setAiAnalysis("AI 分析暂时不可用，请稍后再试。");
+      setAiAnalysis(`AI 分析请求失败: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // 首次进入页面，如果有任务且没分析过，则自动分析一次
     if (todos.length > 0 && !aiAnalysis) {
       performAnalysis();
     }
-  }, [todos, aiAnalysis]);
+  }, [todos.length]); // 仅依赖任务数量变化
 
   const radarData = [
     { subject: '执行力', A: (todos.filter(t => t.is_completed).length / (todos.length || 1)) * 100, fullMark: 100 },
@@ -68,7 +56,7 @@ const TaskAnalysis: React.FC = () => {
             <BrainCircuit className="text-indigo-600" size={32} />
             任务智能分析
           </h1>
-          <p className="text-slate-500">利用 AI 模型深度剖析你的任务模式与效能瓶颈。</p>
+          <p className="text-slate-500">利用后端 AI 模型深度剖析你的任务模式与效能瓶颈。</p>
         </div>
         <button 
           onClick={performAnalysis}
@@ -76,7 +64,7 @@ const TaskAnalysis: React.FC = () => {
           className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
         >
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-          重新分析
+          {loading ? '分析中...' : '重新分析'}
         </button>
       </div>
 
@@ -103,7 +91,7 @@ const TaskAnalysis: React.FC = () => {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-center">
-            <p className="text-xs text-slate-400">基于近 30 天的任务行为数据建模</p>
+            <p className="text-xs text-slate-400">基于客观行为数据建模</p>
           </div>
         </div>
 
@@ -127,7 +115,7 @@ const TaskAnalysis: React.FC = () => {
               <div className="prose prose-invert max-w-none">
                 <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
                   <p className="text-lg leading-relaxed text-indigo-50 whitespace-pre-wrap">
-                    {aiAnalysis || "点击上方按钮开始 AI 深度任务模式分析。"}
+                    {aiAnalysis || "点击重新分析以调取后端 AI 诊断数据。"}
                   </p>
                 </div>
               </div>
