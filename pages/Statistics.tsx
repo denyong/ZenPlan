@@ -71,8 +71,8 @@ const Statistics: React.FC = () => {
               最近 7 天
             </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={taskCompletionData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} />
@@ -95,11 +95,10 @@ const Statistics: React.FC = () => {
               <PieIcon className="text-indigo-600" size={20} />
               任务优先级分布
             </h2>
-            {/* 删除了冗余的 Info 按钮 */}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={priorityData}
@@ -137,8 +136,8 @@ const Statistics: React.FC = () => {
             <Zap className="text-indigo-600" size={24} />
             目标深度与达标率分析
           </h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={goals.map(g => ({ name: g.title, 进度: g.progress }))}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
