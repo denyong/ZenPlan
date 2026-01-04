@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store.ts';
 import { GoalLevel, Status, Goal } from '../types.ts';
+import { getGoalBreakdown } from '../geminiService.ts';
 import { 
   Target, 
   MoreVertical, 
@@ -14,7 +15,9 @@ import {
   Edit3,
   Search,
   Loader2,
-  Calendar
+  Calendar,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 const GoalManager: React.FC = () => {
@@ -22,6 +25,7 @@ const GoalManager: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<GoalLevel | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [aiBreaking, setAiBreaking] = useState(false);
   
   useEffect(() => {
     fetchGoals();
@@ -29,7 +33,6 @@ const GoalManager: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  // Fix: showMenuId needs to support string | number to match Goal.id
   const [showMenuId, setShowMenuId] = useState<string | number | null>(null);
 
   const [formData, setFormData] = useState({
@@ -68,7 +71,26 @@ const GoalManager: React.FC = () => {
       });
     }
     setIsModalOpen(true);
-    setShowMenuId(null); // 开启弹窗时关闭菜单
+    setShowMenuId(null);
+  };
+
+  const handleAiBreakdown = async () => {
+    if (!formData.title) return;
+    setAiBreaking(true);
+    try {
+      const result = await getGoalBreakdown(formData.title, formData.description);
+      if (result && result.subgoals) {
+        const breakdownText = result.subgoals.map((sg: any) => `• ${sg.title}: ${sg.description}`).join('\n');
+        setFormData(prev => ({
+          ...prev,
+          description: prev.description ? `${prev.description}\n\n[AI 智能建议拆解]:\n${breakdownText}` : breakdownText
+        }));
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setAiBreaking(false);
+    }
   };
 
   const handleAction = (e: React.MouseEvent, action: () => void) => {
@@ -99,12 +121,8 @@ const GoalManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 菜单开启时的全局遮罩，点击即关闭菜单 */}
       {showMenuId && (
-        <div 
-          className="fixed inset-0 z-40 cursor-default" 
-          onClick={() => setShowMenuId(null)}
-        />
+        <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowMenuId(null)} />
       )}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -202,9 +220,7 @@ const GoalManager: React.FC = () => {
                   </button>
                   
                   {showMenuId === goal.id && (
-                    <div 
-                      className="absolute right-0 mt-2 w-32 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[60] animate-in fade-in zoom-in duration-200"
-                    >
+                    <div className="absolute right-0 mt-2 w-32 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[60] animate-in fade-in zoom-in duration-200">
                       <button 
                         type="button"
                         onClick={(e) => handleAction(e, () => openModal(goal))}
@@ -251,11 +267,6 @@ const GoalManager: React.FC = () => {
                   ></div>
                 </div>
               </div>
-              
-              <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-[0.03] pointer-events-none ${
-                 goal.level === GoalLevel.LONG ? 'bg-purple-500' :
-                 goal.level === GoalLevel.MID ? 'bg-blue-500' : 'bg-emerald-500'
-              }`}></div>
             </div>
           ))}
 
@@ -284,8 +295,19 @@ const GoalManager: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-10 space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">目标愿景</label>
+              <div className="space-y-2 relative">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">目标愿景</label>
+                  <button
+                    type="button"
+                    onClick={handleAiBreakdown}
+                    disabled={aiBreaking || !formData.title}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black hover:bg-indigo-100 transition-all disabled:opacity-50 border border-indigo-100"
+                  >
+                    {aiBreaking ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    AI 智能拆解
+                  </button>
+                </div>
                 <input 
                   required
                   type="text" 
@@ -301,8 +323,8 @@ const GoalManager: React.FC = () => {
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   placeholder="为了实现这个愿景，我需要..."
-                  rows={3}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all resize-none font-medium"
+                  rows={4}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all resize-none font-medium custom-scrollbar"
                 />
               </div>
               
