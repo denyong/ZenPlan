@@ -16,7 +16,8 @@ import {
   Target,
   Quote,
   Layout,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 
 const Review: React.FC = () => {
@@ -132,7 +133,7 @@ const Review: React.FC = () => {
               {/* 高光 */}
               <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-[320px]">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl"><Sparkles size={20} /></div>
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shadow-sm"><Sparkles size={20} /></div>
                   <div>
                     <h3 className="font-black text-slate-900">高光时刻</h3>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Wins & Achievements</p>
@@ -149,7 +150,7 @@ const Review: React.FC = () => {
               {/* 阻碍 */}
               <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-[320px]">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl"><MessageSquare size={20} /></div>
+                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl shadow-sm"><MessageSquare size={20} /></div>
                   <div>
                     <h3 className="font-black text-slate-900">阻碍与挑战</h3>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Obstacles & Learning</p>
@@ -164,24 +165,40 @@ const Review: React.FC = () => {
               </div>
             </div>
 
-            {/* 下周重心 */}
-            <div className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl shadow-indigo-100 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-700"><Target size={180}/></div>
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
-                <div className="shrink-0">
-                  <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-white backdrop-blur-md">
-                    <Target size={32} />
+            {/* 下周重心 - 重塑后的轻量化高质感设计 */}
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
+              {/* 装饰性背景 */}
+              <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-700 pointer-events-none">
+                <Target size={180}/>
+              </div>
+              
+              <div className="relative z-10 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm border border-indigo-100">
+                      <Zap size={24} fill="currentColor" className="opacity-80" />
+                    </div>
+                    <div>
+                      <h3 className="text-slate-900 font-black text-lg tracking-tight">战略焦点 (The One Thing)</h3>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Next Week Strategic Focus</p>
+                    </div>
+                  </div>
+                  <div className="hidden md:block px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-indigo-100">
+                    Highest Priority
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-indigo-100 font-black text-sm uppercase tracking-widest mb-2">下周唯一重心 (The One Thing)</h3>
+
+                <div className="relative">
                   <input 
                     type="text"
                     value={formData.next_focus_content}
                     onChange={(e) => setFormData({...formData, next_focus_content: e.target.value})}
-                    placeholder="下周必须达成的一项核心产出..."
-                    className="w-full bg-white/10 border-none rounded-2xl px-6 py-4 text-xl font-black text-white placeholder:text-white/30 focus:ring-4 focus:ring-white/10 transition-all"
+                    placeholder="定义下周必须达成的一项核心产出..."
+                    className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-8 py-6 text-xl font-black text-slate-800 placeholder:text-slate-300 focus:ring-8 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-500 outline-none transition-all"
                   />
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-200 pointer-events-none">
+                    <ArrowRight size={24} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,7 +207,7 @@ const Review: React.FC = () => {
               <button 
                 onClick={handleSave}
                 className={`group flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-lg transition-all ${
-                  isSaved ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-1 active:translate-y-0 shadow-2xl shadow-slate-200'
+                  isSaved ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-1 active:translate-y-0 shadow-2xl shadow-slate-200'
                 }`}
               >
                 {isSaved ? <><CheckCircle size={22} /> 进化档案已归档</> : <>归档并发布 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
@@ -211,12 +228,12 @@ const Review: React.FC = () => {
 
               <div className="space-y-8 flex-1">
                 <div className="flex items-center gap-6">
-                  <div className="flex-1">
+                  <div className="flex-1 text-center sm:text-left">
                     <p className="text-3xl font-black text-slate-900 tracking-tighter">{completed.length}</p>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">达成成就项</p>
                   </div>
-                  <div className="w-px h-10 bg-slate-100"></div>
-                  <div className="flex-1">
+                  <div className="hidden sm:block w-px h-10 bg-slate-100"></div>
+                  <div className="flex-1 text-center sm:text-left">
                     <p className="text-3xl font-black text-rose-500 tracking-tighter">{pending.length}</p>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">待审计阻碍</p>
                   </div>
