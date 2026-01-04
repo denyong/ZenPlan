@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-// Fixed react-router-dom export error by using the standard named import
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { 
@@ -14,7 +13,6 @@ import {
   Settings, 
   X, 
   Globe, 
-  HelpCircle,
   Terminal,
   RefreshCw
 } from 'lucide-react';
@@ -22,7 +20,7 @@ import {
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showApiSettings, setShowApiSettings] = useState(false);
-  const [tempApiUrl, setTempApiUrl] = useState(localStorage.getItem('zenplan_api_url') || 'http://127.0.0.1:5000');
+  const [tempApiUrl, setTempApiUrl] = useState(localStorage.getItem('calmexec_api_url') || 'http://127.0.0.1:5000');
   
   const navigate = useNavigate();
   const { login, register, loading, error, token, setApiUrl } = useStore();
@@ -55,13 +53,11 @@ const Auth: React.FC = () => {
 
   const handleSaveApiSettings = () => {
     let cleanUrl = tempApiUrl.trim();
-    // 确保有协议头
     if (!cleanUrl.startsWith('http')) {
       cleanUrl = `http://${cleanUrl}`;
     }
     setApiUrl(cleanUrl);
     setShowApiSettings(false);
-    // 强制重载以确保所有组件使用新 URL
     window.location.reload();
   };
 
@@ -71,7 +67,6 @@ const Auth: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 relative selection:bg-indigo-100 selection:text-indigo-900">
-      {/* 快捷设置按钮 */}
       <button 
         onClick={() => setShowApiSettings(true)}
         className="absolute top-6 right-6 p-3 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-indigo-600 hover:shadow-xl hover:-translate-y-0.5 transition-all z-10 shadow-sm"
@@ -83,23 +78,21 @@ const Auth: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-500">
           <div className="p-10">
-            {/* Logo */}
             <div className="flex justify-center mb-8">
               <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-indigo-200 rotate-3 hover:rotate-0 transition-transform cursor-default">
-                Z
+                C
               </div>
             </div>
             
             <div className="text-center space-y-2 mb-10">
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                {isLogin ? '欢迎回到 ZenPlan' : '开启进化之旅'}
+                {isLogin ? '欢迎回到 CalmExec' : '开启进化之旅'}
               </h1>
               <p className="text-slate-500 font-medium">
-                {isLogin ? '规划你的愿景，掌控你的执行。' : '建立一个能自我进化的效率系统。'}
+                {isLogin ? '冷静规划你的愿景，掌控极致执行。' : '建立一个能自我进化的效率系统。'}
               </p>
             </div>
 
-            {/* 增强型错误展示 */}
             {error && (
               <div className="mb-8 p-5 bg-rose-50 border border-rose-100 rounded-3xl space-y-4 animate-shake">
                 <div className="flex items-start gap-3 text-rose-600">
@@ -202,7 +195,6 @@ const Auth: React.FC = () => {
         </div>
       </div>
 
-      {/* API 高级设置模态框 */}
       {showApiSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">

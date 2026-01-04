@@ -17,7 +17,6 @@ const StatCard = ({ title, value, subtext, icon: Icon, color, trend, trendLabel 
             <TrendingUp size={14} className={trend < 0 ? 'rotate-180' : ''} />
             <span>{trend > 0 ? '+' : ''}{trend}%</span>
           </div>
-          {/* Tooltip 解释说明 */}
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-slate-900 text-white text-[10px] rounded-xl opacity-0 group-hover/trend:opacity-100 transition-all pointer-events-none text-center font-black z-30 shadow-xl translate-y-2 group-hover/trend:translate-y-0">
             {trendLabel}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
@@ -56,7 +55,6 @@ const Dashboard: React.FC = () => {
   const safeGoals = Array.isArray(goals) ? goals : [];
   const safeTodos = Array.isArray(todos) ? todos : [];
 
-  // --- 真实动态数据计算逻辑 ---
   const calculations = useMemo(() => {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -71,7 +69,6 @@ const Dashboard: React.FC = () => {
     const fourteenDaysAgo = new Date(now);
     fourteenDaysAgo.setDate(now.getDate() - 14);
 
-    // 1. 今日 vs 昨日完成增长率
     const todayTasks = safeTodos.filter(t => t.due_date.startsWith(todayStr));
     const todayCompleted = todayTasks.filter(t => t.is_completed).length;
     
@@ -82,14 +79,12 @@ const Dashboard: React.FC = () => {
     if (yesterdayCompleted > 0) {
       todoTrend = Math.round(((todayCompleted - yesterdayCompleted) / yesterdayCompleted) * 100);
     } else if (todayCompleted > 0) {
-      todoTrend = 100; // 突破性增长
+      todoTrend = 100;
     }
 
-    // 2. 战略目标增长 (最近 7 天新增目标占比)
     const newGoalsCount = safeGoals.filter(g => new Date(g.created_at) > sevenDaysAgo).length;
     const goalGrowthTrend = safeGoals.length > 0 ? Math.round((newGoalsCount / safeGoals.length) * 100) : 0;
 
-    // 3. 效能转化率对比 (本周完成率 vs 上周完成率)
     const thisWeekTasks = safeTodos.filter(t => new Date(t.due_date) > sevenDaysAgo);
     const lastWeekTasks = safeTodos.filter(t => {
       const d = new Date(t.due_date);
@@ -102,12 +97,9 @@ const Dashboard: React.FC = () => {
     const efficiencyRate = Math.round(thisWeekRate * 100);
     const efficiencyTrend = Math.round((thisWeekRate - lastWeekRate) * 100);
 
-    // 4. 主攻目标进展增量 (计算第一目标最近 7 天的进度增量)
     const mainGoal = safeGoals[0];
     let mainProgressTrend = 0;
     if (mainGoal) {
-      // 假设如果 updated_at 在 7 天内，我们粗略估算一部分是近期增长
-      // 在更复杂的系统中，这里应该对比历史快照
       const isRecentlyUpdated = new Date(mainGoal.updated_at) > sevenDaysAgo;
       mainProgressTrend = isRecentlyUpdated ? Math.min(Math.round(mainGoal.progress * 0.2), 15) : 0;
     }
@@ -137,7 +129,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-indigo-600" size={40} />
-        <p className="text-slate-400 font-bold">同步云端战略数据中...</p>
+        <p className="text-slate-400 font-bold">同步 CalmExec 核心战略中...</p>
       </div>
     );
   }
@@ -147,7 +139,7 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">{greeting}, {user?.username || '拓荒者'}</h1>
-          <p className="text-slate-500 font-medium mt-1">你的战略执行系统已就绪，今天又是进化的一天。</p>
+          <p className="text-slate-500 font-medium mt-1">CalmExec 战略执行系统已就绪。冷静规划，极致执行。</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 shadow-sm px-6 py-3 rounded-3xl font-bold">
           <div className="p-1.5 bg-amber-100 rounded-lg text-amber-600">
@@ -263,7 +255,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-black text-slate-900 text-2xl">完美清空！</p>
-                  <p className="text-slate-400 font-medium">今天的执行力无可挑剔。</p>
+                  <p className="text-slate-400 font-medium">冷静的执行力无可挑剔。</p>
                 </div>
               </div>
             )}

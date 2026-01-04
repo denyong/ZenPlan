@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-// Fixed react-router-dom exports by using a standard import and resolving local paths without extensions
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -35,7 +34,6 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
   </Link>
 );
 
-// Added optional children type to resolve TS errors in routing contexts
 const AppLayout = ({ children }: { children?: React.ReactNode }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -47,8 +45,8 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between px-6 py-6 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">Z</div>
-              <h1 className="text-xl font-bold tracking-tight">ZenPlan</h1>
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">C</div>
+              <h1 className="text-xl font-bold tracking-tight">CalmExec</h1>
             </div>
             <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-400">
               <X size={20} />
@@ -107,7 +105,6 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
-// Added optional children type to resolve TS errors in routing contexts
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { token } = useStore();
   if (!token) {

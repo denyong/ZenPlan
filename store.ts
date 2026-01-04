@@ -53,20 +53,20 @@ export const useStore = create<AppState>((set, get) => ({
   error: null,
 
   setApiUrl: (url: string) => {
-    localStorage.setItem('zenplan_api_url', url);
+    localStorage.setItem('calmexec_api_url', url);
   },
 
   checkAuth: () => {
     try {
-      const token = localStorage.getItem('zenplan_token');
-      const userStr = localStorage.getItem('zenplan_user');
+      const token = localStorage.getItem('calmexec_token');
+      const userStr = localStorage.getItem('calmexec_user');
       if (token && userStr && userStr !== "undefined") {
         set({ token, user: JSON.parse(userStr) });
       }
     } catch (e) {
       console.error("Auth check failed", e);
-      localStorage.removeItem('zenplan_token');
-      localStorage.removeItem('zenplan_user');
+      localStorage.removeItem('calmexec_token');
+      localStorage.removeItem('calmexec_user');
     }
   },
 
@@ -82,8 +82,8 @@ export const useStore = create<AppState>((set, get) => ({
       
       if (!token) throw new Error("响应中缺少有效 Token");
       
-      localStorage.setItem('zenplan_token', token);
-      localStorage.setItem('zenplan_user', JSON.stringify(user));
+      localStorage.setItem('calmexec_token', token);
+      localStorage.setItem('calmexec_user', JSON.stringify(user));
       set({ token, user, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
@@ -106,8 +106,8 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem('zenplan_token');
-    localStorage.removeItem('zenplan_user');
+    localStorage.removeItem('calmexec_token');
+    localStorage.removeItem('calmexec_user');
     set({ user: null, token: null, goals: [], todos: [], reviews: [], stats: null });
   },
 
@@ -115,7 +115,6 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      // 适配后端返回结构: { data: { goals: [] } } 或 { data: [] }
       const goalsData = res.data?.goals || res.data || [];
       set({ goals: Array.isArray(goalsData) ? goalsData : [], loading: false, error: null });
     } catch (err: any) {
