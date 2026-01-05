@@ -38,7 +38,7 @@ interface AppState {
   saveReview: (review: Partial<WeeklyReview>) => Promise<void>;
   fetchTrendReport: () => Promise<string>;
 
-  // AI Logic (Backend-based)
+  // AI Logic (Strictly Backend-based)
   fetchTaskAnalysis: (onStream?: (chunk: string) => void) => Promise<any>;
   fetchGoalBreakdown: (title: string, description: string) => Promise<any>;
 
@@ -46,7 +46,6 @@ interface AppState {
   fetchStats: () => Promise<void>;
 }
 
-// 辅助函数：安全解析用户信息
 const getInitialUser = (): User | null => {
   try {
     const userStr = localStorage.getItem('calmexec_user');
@@ -60,7 +59,6 @@ const getInitialUser = (): User | null => {
 };
 
 export const useStore = create<AppState>((set, get) => ({
-  // 核心改动：直接从本地存储同步初始化，消除刷新闪现
   user: getInitialUser(),
   token: localStorage.getItem('calmexec_token'),
   goals: [],
@@ -75,7 +73,6 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   checkAuth: () => {
-    // 此时 checkAuth 更多作为一种确保状态同步的后备手段
     try {
       const token = localStorage.getItem('calmexec_token');
       const user = getInitialUser();
@@ -83,7 +80,6 @@ export const useStore = create<AppState>((set, get) => ({
         set({ token, user });
       }
     } catch (e) {
-      console.error("Auth check failed", e);
       localStorage.removeItem('calmexec_token');
       localStorage.removeItem('calmexec_user');
     }
@@ -96,10 +92,7 @@ export const useStore = create<AppState>((set, get) => ({
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      
       const { token, user } = res.data || {};
-      if (!token) throw new Error("响应中缺少有效 Token");
-      
       localStorage.setItem('calmexec_token', token);
       localStorage.setItem('calmexec_user', JSON.stringify(user));
       set({ token, user, loading: false });
@@ -134,8 +127,7 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/goals', { params: filters });
-      const goalsData = res.data?.goals || res.data || [];
-      set({ goals: Array.isArray(goalsData) ? goalsData : [], loading: false, error: null });
+      set({ goals: res.data?.goals || res.data || [], loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, goals: [] });
     }
@@ -143,10 +135,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addGoal: async (goal) => {
     try {
-      await apiClient('/api/v1/goals', {
-        method: 'POST',
-        body: JSON.stringify(goal),
-      });
+      await apiClient('/api/v1/goals', { method: 'POST', body: JSON.stringify(goal) });
       get().fetchGoals();
     } catch (err: any) {
       set({ error: err.message });
@@ -155,10 +144,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   updateGoal: async (id, updates) => {
     try {
-      await apiClient(`/api/v1/goals/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
+      await apiClient(`/api/v1/goals/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
       get().fetchGoals();
     } catch (err: any) {
       set({ error: err.message });
@@ -178,8 +164,7 @@ export const useStore = create<AppState>((set, get) => ({
     set({ loading: true });
     try {
       const res = await apiClient('/api/v1/todos', { params: filters });
-      const todosData = res.data?.todos || res.data || [];
-      set({ todos: Array.isArray(todosData) ? todosData : [], loading: false, error: null });
+      set({ todos: res.data?.todos || res.data || [], loading: false, error: null });
     } catch (err: any) {
       set({ error: err.message, loading: false, todos: [] });
     }
@@ -187,10 +172,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addTodo: async (todo) => {
     try {
-      await apiClient('/api/v1/todos', {
-        method: 'POST',
-        body: JSON.stringify(todo),
-      });
+      await apiClient('/api/v1/todos', { method: 'POST', body: JSON.stringify(todo) });
       get().fetchTodos();
     } catch (err: any) {
       set({ error: err.message });
@@ -208,10 +190,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   updateTodo: async (id, updates) => {
     try {
-      await apiClient(`/api/v1/todos/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
+      await apiClient(`/api/v1/todos/${id}`, { method: 'PUT', body: JSON.stringify(updates) });
       get().fetchTodos();
     } catch (err: any) {
       set({ error: err.message });
@@ -230,19 +209,13 @@ export const useStore = create<AppState>((set, get) => ({
   fetchReviews: async () => {
     try {
       const res = await apiClient('/api/v1/reviews');
-      const reviews = res.data?.reviews || res.data || [];
-      set({ reviews: Array.isArray(reviews) ? reviews : [] });
-    } catch (err: any) {
-      console.error("Reviews fetch error:", err);
-    }
+      set({ reviews: res.data?.reviews || res.data || [] });
+    } catch (err: any) {}
   },
 
   saveReview: async (review) => {
     try {
-      await apiClient('/api/v1/reviews', {
-        method: 'POST',
-        body: JSON.stringify(review),
-      });
+      await apiClient('/api/v1/reviews', { method: 'POST', body: JSON.stringify(review) });
       get().fetchReviews();
     } catch (err: any) {
       set({ error: err.message });
@@ -260,9 +233,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   fetchTaskAnalysis: async (onStream) => {
     try {
-      const res = await apiClient('/api/v1/analysis/tasks', {
-        onStream: onStream
-      });
+      const res = await apiClient('/api/v1/analysis/tasks', { onStream });
       return res.data;
     } catch (err: any) {
       throw new Error(err.message || "AI 诊断请求失败，请检查后端接口。");
@@ -285,8 +256,6 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const res = await apiClient('/api/v1/stats/dashboard/summary');
       set({ stats: res.data });
-    } catch (err: any) {
-      console.error("Stats fetch error:", err);
-    }
+    } catch (err: any) {}
   },
 }));
