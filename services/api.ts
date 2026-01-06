@@ -1,26 +1,58 @@
 
 const getBaseUrl = () => {
-  return localStorage.getItem('calmexec_api_url') || 'http://127.0.0.1:5000';
+  const DEFAULT_URL = 'http://127.0.0.1:5000/';
+  let rawUrl = localStorage.getItem('calmexec_api_url');
+  
+  if (!rawUrl || typeof rawUrl !== 'string' || rawUrl.trim() === '') {
+    return DEFAULT_URL;
+  }
+  
+  let url = rawUrl.trim();
+  
+  // 补全协议头
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'http://' + url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    // 基础校验：必须有 hostname
+    if (!parsed.hostname) return DEFAULT_URL;
+    
+    // 移除路径末尾多余的斜杠并重新添加一个，确保作为 Base URL 时表现一致
+    const cleanPath = parsed.origin + parsed.pathname.replace(/\/+$/, '');
+    return cleanPath + '/';
+  } catch (e) {
+    console.warn("[CalmExec] API URL 格式非法，回退到默认地址:", url);
+    return DEFAULT_URL;
+  }
 };
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
-  onStream?: (chunk: string) => void; // 新增：流式回调
+  onStream?: (chunk: string) => void; 
 }
 
 export const apiClient = async (endpoint: string, options: RequestOptions = {}) => {
   const { params, headers, onStream, ...rest } = options;
   const token = localStorage.getItem('calmexec_token');
-  const baseUrl = getBaseUrl();
+  const baseWithSlash = getBaseUrl();
 
-  const baseWithSlash = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  // 1. 防御性检查：确保 endpoint 是字符串
+  const safeEndpoint = String(endpoint || '');
+  
+  // 2. 规范化 Endpoint：移除开头的斜杠
+  const cleanEndpoint = safeEndpoint.startsWith('/') ? safeEndpoint.slice(1) : safeEndpoint;
   
   let finalUrlObj: URL;
   try {
+    // 采用标准化的 URL 构造方式
+    // 如果 cleanEndpoint 是绝对路径（如 http://...），它会忽略 baseWithSlash
     finalUrlObj = new URL(cleanEndpoint, baseWithSlash);
   } catch (e) {
-    finalUrlObj = new URL(`${baseWithSlash}${cleanEndpoint}`);
+    console.error("[CalmExec] 无法构造 URL。Endpoint:", cleanEndpoint, "Base:", baseWithSlash);
+    // 最后的防御：如果解析彻底失败，抛出带有诊断信息的错误，而不是让系统静默崩溃
+    throw new Error(`请求地址格式无效。请在设置中检查服务器地址配置。 (Endpoint: ${cleanEndpoint})`);
   }
 
   if (params) {
@@ -52,18 +84,14 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
       },
     });
 
-    // 核心逻辑：401 处理
     if (response.status === 401) {
       console.warn("[CalmExec] Token 过期或无效，正在跳转登录...");
       localStorage.removeItem('calmexec_token');
       localStorage.removeItem('calmexec_user');
-      // 强制跳转到登录页 (Hash 路由)
       window.location.hash = '#/auth';
-      // 抛出错误以中断当前业务逻辑
       throw new Error("会话已过期，请重新登录。");
     }
 
-    // 处理流式输出逻辑
     if (onStream && response.body && response.ok) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -77,7 +105,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
           onStream(chunkValue);
         }
       }
-      return { data: { success: true } }; // 流式结束返回简单标志
+      return { data: { success: true } };
     }
 
     const data = await response.json();
@@ -90,11 +118,10 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
   } catch (err: any) {
     console.error(`[CalmExec API Error] 目标 URL: ${url}`, err);
     
-    // 如果是 401 触发的 Error 不再展示诊断提示，由 UI 或路由处理
-    if (err.message.includes("重新登录")) throw err;
+    if (err.message && err.message.includes("重新登录")) throw err;
 
     if (err.name === 'TypeError' && (err.message === 'Failed to fetch' || err.message.includes('CORS'))) {
-      const diagnosis = `连接失败。请确保后端服务在 ${baseUrl} 运行且允许跨域请求。`;
+      const diagnosis = `连接失败。请确保后端服务在 ${baseWithSlash} 运行且允许跨域请求。`;
       throw new Error(diagnosis);
     }
     throw err;

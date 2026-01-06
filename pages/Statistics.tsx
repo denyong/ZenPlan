@@ -59,20 +59,20 @@ const Statistics: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <TrendingUp className="text-indigo-600" size={20} />
-              本周执行趋势 (真实数据)
+              本周执行趋势
             </h2>
             <div className="flex items-center gap-2 text-xs text-slate-400 font-bold bg-slate-50 px-3 py-1.5 rounded-lg">
               <Calendar size={14} />
               最近 7 天
             </div>
           </div>
-          <div className="h-64 w-full min-h-[256px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
-              <BarChart data={taskCompletionData}>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={taskCompletionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
@@ -88,7 +88,7 @@ const Statistics: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <PieIcon className="text-indigo-600" size={20} />
@@ -96,8 +96,8 @@ const Statistics: React.FC = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div className="h-64 w-full min-h-[256px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={priorityData}
@@ -130,14 +130,14 @@ const Statistics: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[450px]">
+        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
             <Zap className="text-indigo-600" size={24} />
             目标深度与达标率分析
           </h2>
-          <div className="h-80 w-full min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
-              <LineChart data={goals.map(g => ({ name: g.title, 进度: g.progress }))}>
+          <div style={{ width: '100%', height: 350 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={goals.map(g => ({ name: g.title, 进度: g.progress }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />

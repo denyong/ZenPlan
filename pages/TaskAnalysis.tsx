@@ -120,13 +120,13 @@ const TaskAnalysis: React.FC = () => {
 
       <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 overflow-hidden pb-2">
         <div className="xl:col-span-4 flex flex-col gap-6 overflow-hidden">
-          <div className="flex-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center min-h-[400px]">
+          <div className="flex-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center">
             <h3 className="text-xs font-black mb-4 w-full flex items-center justify-between text-slate-700">
               <span className="flex items-center gap-2"><div className="w-1 h-4 bg-indigo-600 rounded-full"></div>能力分布</span>
               <BarChart3 className="text-slate-200" size={16} />
             </h3>
-            <div className="w-full flex-1 min-h-[250px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
+            <div style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={chartData}>
                   <PolarGrid stroke="#f1f5f9" />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />

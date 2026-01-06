@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calmexec-v3-permanent';
+const CACHE_NAME = 'calmexec-v4-permanent';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -8,16 +8,15 @@ const CORE_ASSETS = [
   'https://cdn.tailwindcss.com'
 ];
 
-// 安装阶段：手动 fetch 资源以支持 no-cors
+// 安装阶段：预缓存核心资源
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] 正在构建本地镜像...');
       for (const url of CORE_ASSETS) {
         try {
-          // 针对跨域资源使用 no-cors 模式
-          const requestMode = url.includes('http') ? 'no-cors' : 'cors';
-          const response = await fetch(url, { mode: requestMode });
+          const isRemote = url.startsWith('http');
+          const response = await fetch(url, { mode: isRemote ? 'no-cors' : 'cors' });
           await cache.put(url, response);
         } catch (e) {
           console.warn('[SW] 预缓存失败:', url, e);
@@ -28,6 +27,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+// 激活阶段：清理旧版本缓存
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -39,27 +39,51 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// 拦截并处理请求
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
+  let url;
+  
+  try {
+    // 必须确保 request.url 存在且有效
+    if (!request.url) return;
+    url = new URL(request.url);
+  } catch (e) {
+    // 捕获 Invalid URL 异常，防止 SW 线程崩溃
+    return;
+  }
 
+  // 严格过滤：仅处理 http/https 协议
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+  // 忽略非 GET 请求和特定的 AI 流式接口
   if (request.method !== 'GET') return;
   if (url.pathname.includes('/analysis/')) return;
 
   const isLibrary = url.origin.includes('esm.sh') || url.origin.includes('tailwindcss.com');
-  const isLocalStatic = CORE_ASSETS.some(asset => request.url.includes(asset.replace('./', '')));
+  
+  // 检查是否为核心静态资源
+  const isLocalStatic = CORE_ASSETS.some(asset => {
+    try {
+      const base = self.location.href;
+      if (!base || base === 'about:blank') return false;
+      const absoluteAssetUrl = new URL(asset, base).href;
+      return url.href === absoluteAssetUrl;
+    } catch (e) {
+      return false;
+    }
+  });
 
+  // 静态资源策略：缓存优先
   if (isLibrary || isLocalStatic || url.pathname.endsWith('.js') || url.pathname.endsWith('.tsx')) {
     event.respondWith(
       caches.match(request).then(async (cachedResponse) => {
         if (cachedResponse) return cachedResponse;
 
         try {
-          // 外部库若常规 fetch 失败，尝试 no-cors 模式
           const fetchOptions = isLibrary ? { mode: 'no-cors' } : {};
           const networkResponse = await fetch(request, fetchOptions);
           
-          // 立即克隆，不透明响应 (type: opaque) 虽然 ok 为 false 但依然可以缓存
           if (networkResponse) {
             const cacheCopy = networkResponse.clone();
             const cache = await caches.open(CACHE_NAME);
@@ -74,7 +98,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API 请求：网络优先
+  // API 业务请求策略：网络优先
   if (url.pathname.includes('/api/v1/')) {
     event.respondWith(
       fetch(request)
@@ -86,7 +110,9 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(request))
+        .catch(() => {
+          return caches.match(request);
+        })
     );
   }
 });
