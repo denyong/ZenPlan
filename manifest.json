@@ -1,0 +1,16 @@
+
+{
+  "short_name": "CalmExec",
+  "name": "CalmExec 极致执行系统",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/initials/svg?seed=CE&backgroundColor=4f46e5",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "theme_color": "#4f46e5"
+}
