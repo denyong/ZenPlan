@@ -1,6 +1,5 @@
 
 const CACHE_NAME = 'calmexec-v3-permanent';
-// 这里的列表是系统启动的最核心资源
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -9,12 +8,21 @@ const CORE_ASSETS = [
   'https://cdn.tailwindcss.com'
 ];
 
-// 安装阶段：强制把核心资源和一些常用的 esm.sh 库抓取到本地
+// 安装阶段：手动 fetch 资源以支持 no-cors
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] 正在构建本地镜像...');
-      return cache.addAll(CORE_ASSETS);
+      for (const url of CORE_ASSETS) {
+        try {
+          // 针对跨域资源使用 no-cors 模式
+          const requestMode = url.includes('http') ? 'no-cors' : 'cors';
+          const response = await fetch(url, { mode: requestMode });
+          await cache.put(url, response);
+        } catch (e) {
+          console.warn('[SW] 预缓存失败:', url, e);
+        }
+      }
     })
   );
   self.skipWaiting();
@@ -35,44 +43,47 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. 忽略非 GET 请求
   if (request.method !== 'GET') return;
-
-  // 2. 忽略流式分析接口（必须联网）
   if (url.pathname.includes('/analysis/')) return;
 
-  // 3. 策略：缓存优先 (Cache First) 
-  // 针对静态资源、第三方库(esm.sh)、CDN 脚本。
-  // 一旦存入缓存，除非用户手动清空浏览器数据，否则永远不再请求网络。
   const isLibrary = url.origin.includes('esm.sh') || url.origin.includes('tailwindcss.com');
   const isLocalStatic = CORE_ASSETS.some(asset => request.url.includes(asset.replace('./', '')));
 
   if (isLibrary || isLocalStatic || url.pathname.endsWith('.js') || url.pathname.endsWith('.tsx')) {
     event.respondWith(
-      caches.match(request).then((response) => {
-        return response || fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.ok) {
+      caches.match(request).then(async (cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+
+        try {
+          // 外部库若常规 fetch 失败，尝试 no-cors 模式
+          const fetchOptions = isLibrary ? { mode: 'no-cors' } : {};
+          const networkResponse = await fetch(request, fetchOptions);
+          
+          // 立即克隆，不透明响应 (type: opaque) 虽然 ok 为 false 但依然可以缓存
+          if (networkResponse) {
             const cacheCopy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, cacheCopy);
-            });
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, cacheCopy);
           }
           return networkResponse;
-        });
+        } catch (e) {
+          return null;
+        }
       })
     );
     return;
   }
 
-  // 4. 针对普通 API 请求：网络优先 (Network First)
+  // API 请求：网络优先
   if (url.pathname.includes('/api/v1/')) {
     event.respondWith(
       fetch(request)
-        .then((networkResponse) => {
-          const cacheCopy = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
+        .then(async (networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const cacheCopy = networkResponse.clone();
+            const cache = await caches.open(CACHE_NAME);
             cache.put(request, cacheCopy);
-          });
+          }
           return networkResponse;
         })
         .catch(() => caches.match(request))

@@ -22,7 +22,6 @@ import { TrendingUp, Calendar, Zap, PieChart as PieIcon } from 'lucide-react';
 const Statistics: React.FC = () => {
   const { todos, goals } = useStore();
 
-  // 动态计算最近 7 天的执行趋势
   const taskCompletionData = useMemo(() => {
     const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     const now = new Date();
@@ -53,14 +52,14 @@ const Statistics: React.FC = () => {
   const COLORS = ['#f43f5e', '#f59e0b', '#10b981'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <div>
         <h1 className="text-3xl font-bold">执行数据分析</h1>
         <p className="text-slate-500">通过客观的数据维度审视你的成长轨迹。</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <TrendingUp className="text-indigo-600" size={20} />
@@ -71,8 +70,8 @@ const Statistics: React.FC = () => {
               最近 7 天
             </div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <div className="h-64 w-full min-h-[256px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
               <BarChart data={taskCompletionData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} />
@@ -89,7 +88,7 @@ const Statistics: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <PieIcon className="text-indigo-600" size={20} />
@@ -97,8 +96,8 @@ const Statistics: React.FC = () => {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <div className="h-64 w-full min-h-[256px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
                 <PieChart>
                   <Pie
                     data={priorityData}
@@ -131,13 +130,13 @@ const Statistics: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[450px]">
           <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
             <Zap className="text-indigo-600" size={24} />
             目标深度与达标率分析
           </h2>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <div className="h-80 w-full min-h-[320px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
               <LineChart data={goals.map(g => ({ name: g.title, 进度: g.progress }))}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />

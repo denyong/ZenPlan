@@ -33,7 +33,6 @@ const TaskAnalysis: React.FC = () => {
 
   const rawBuffer = useRef("");
 
-  // 处理后端可能返回的 Unicode 或特殊字符
   const decodeAiText = (str: string) => {
     if (!str) return "";
     try {
@@ -48,7 +47,6 @@ const TaskAnalysis: React.FC = () => {
     rawBuffer.current += chunk;
     const fullText = rawBuffer.current;
 
-    // 如果后端返回的是流式 JSON 字符串片段，这里需要简单的正则提取核心内容
     const analysisMatch = fullText.match(/"analysis"\s*:\s*"/);
     if (analysisMatch && analysisMatch.index !== undefined) {
       const startPos = analysisMatch.index + analysisMatch[0].length;
@@ -59,7 +57,6 @@ const TaskAnalysis: React.FC = () => {
       }
       setDisplayedText(decodeAiText(content));
     } else if (!fullText.startsWith('{')) {
-      // 兼容直接返回 Markdown 流的情况
       setDisplayedText(decodeAiText(fullText));
     }
 
@@ -123,13 +120,13 @@ const TaskAnalysis: React.FC = () => {
 
       <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 overflow-hidden pb-2">
         <div className="xl:col-span-4 flex flex-col gap-6 overflow-hidden">
-          <div className="flex-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center">
+          <div className="flex-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center min-h-[400px]">
             <h3 className="text-xs font-black mb-4 w-full flex items-center justify-between text-slate-700">
               <span className="flex items-center gap-2"><div className="w-1 h-4 bg-indigo-600 rounded-full"></div>能力分布</span>
               <BarChart3 className="text-slate-200" size={16} />
             </h3>
-            <div className="w-full flex-1">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full flex-1 min-h-[250px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
                 <RadarChart data={chartData}>
                   <PolarGrid stroke="#f1f5f9" />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />
