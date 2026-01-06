@@ -12,7 +12,9 @@ import {
   X,
   LogOut,
   BrainCircuit,
-  Sparkles
+  Sparkles,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useStore } from './store';
 import Dashboard from './pages/Dashboard';
@@ -46,6 +48,18 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { user, logout } = useStore();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
@@ -84,7 +98,17 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
               <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'user'}`} alt="Avatar" className="w-10 h-10 rounded-full border-2 border-indigo-100" />
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-semibold truncate">{user?.username || 'Guest'}</p>
-                <p className="text-xs text-slate-500 truncate">高级会员</p>
+                <div className="flex items-center gap-1">
+                   {isOnline ? (
+                     <div className="flex items-center gap-1 text-[9px] text-emerald-600 font-black uppercase tracking-widest">
+                       <Wifi size={8} /> 云端同步中
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-1 text-[9px] text-amber-600 font-black uppercase tracking-widest">
+                       <WifiOff size={8} /> 离线工作模式
+                     </div>
+                   )}
+                </div>
               </div>
               <button 
                 onClick={logout}
@@ -108,6 +132,12 @@ const AppLayout = ({ children }: { children?: React.ReactNode }) => {
                 </button>
               )}
             </div>
+            {!isOnline && (
+              <div className="px-3 py-1 bg-amber-50 border border-amber-100 rounded-full flex items-center gap-2">
+                <WifiOff size={14} className="text-amber-500" />
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">本地缓存模式</span>
+              </div>
+            )}
           </div>
         </header>
 

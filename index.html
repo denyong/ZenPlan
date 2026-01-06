@@ -7,17 +7,17 @@
   <title>CalmExec - 冷静规划，极致执行</title>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#4f46e5">
+  <!-- Tailwind 脚本会被 SW 缓存，从而实现离线加载 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 离线优先字体栈：移除对 Google Fonts 的网络依赖 */
+    /* 完全使用系统字体栈，不依赖任何外部 Google Fonts */
     body {
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
       background-color: #f8fafc;
       margin: 0;
       overflow: hidden;
     }
     
-    /* 降级样式：确保在 Tailwind CDN 失败时配置界面依然可用 */
     #root:empty::before {
       content: "系统初始化中...";
       display: flex;
@@ -25,6 +25,7 @@
       align-items: center;
       height: 100vh;
       color: #64748b;
+      font-weight: bold;
     }
 
     .custom-scrollbar::-webkit-scrollbar {
@@ -69,12 +70,19 @@
   <div id="root"></div>
   <script type="module" src="./index.tsx"></script>
   <script>
-    // 注册 Service Worker 实现离线缓存
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => {
-          console.warn('Service Worker 注册失败:', err);
-        });
+        // 使用明确的 URL 构造函数确保解析到当前页面的 Origin，而不是父窗口
+        const swUrl = new URL('./sw.js', window.location.href).href;
+        navigator.serviceWorker.register(swUrl)
+          .then(reg => console.log('[App] SW registered successfully:', reg.scope))
+          .catch(err => {
+            console.error('[App] SW registration failed:', err);
+            // 降级尝试：如果带路径解析失败，尝试根路径
+            if (err.message.includes('origin')) {
+              navigator.serviceWorker.register('sw.js').catch(e => console.error('Final fallback failed', e));
+            }
+          });
       });
     }
   </script>
