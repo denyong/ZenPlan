@@ -314,9 +314,12 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-          <Link to="/goals" className="w-full mt-10 py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 hover:-translate-y-1 shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-2">
+          <Link 
+            to="/goals" 
+            className="group w-full mt-10 py-5 rounded-[24px] bg-gradient-to-br from-slate-900 to-slate-800 text-white font-black text-sm shadow-[0_15px_30px_-5px_rgba(15,23,42,0.2)] hover:shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
             进入战略推演
-            <ChevronRight size={18} />
+            <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </div>
