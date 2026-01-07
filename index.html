@@ -72,17 +72,32 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // 使用明确的 URL 构造函数确保解析到当前页面的 Origin，而不是父窗口
-        const swUrl = new URL('./sw.js', window.location.href).href;
-        navigator.serviceWorker.register(swUrl)
-          .then(reg => console.log('[App] SW registered successfully:', reg.scope))
-          .catch(err => {
-            console.error('[App] SW registration failed:', err);
-            // 降级尝试：如果带路径解析失败，尝试根路径
-            if (err.message.includes('origin')) {
-              navigator.serviceWorker.register('sw.js').catch(e => console.error('Final fallback failed', e));
-            }
-          });
+        /**
+         * 修复 Origin 匹配错误：
+         * 在某些预览环境中（如 AI Studio），浏览器可能会错误地将 "./sw.js" 解析到父域（如 ai.studio）。
+         * 我们通过 window.location 强制构造与当前页面 Origin 严格一致的绝对路径。
+         */
+        try {
+          const origin = window.location.origin;
+          const pathname = window.location.pathname;
+          // 获取当前目录路径（以 / 结尾）
+          const directory = pathname.substring(0, pathname.lastIndexOf('/') + 1);
+          const swUrl = origin + directory + 'sw.js';
+
+          console.log('[App] Attempting to register SW at:', swUrl);
+          
+          navigator.serviceWorker.register(swUrl)
+            .then(reg => console.log('[App] SW registered successfully:', reg.scope))
+            .catch(err => {
+              console.warn('[App] SW registration failed with full URL, retrying with relative path:', err);
+              // 最后的兜底：尝试最简单的相对路径
+              navigator.serviceWorker.register('sw.js').catch(e => {
+                console.error('[App] Final SW registration attempt failed:', e);
+              });
+            });
+        } catch (e) {
+          console.error('[App] Error during SW registration setup:', e);
+        }
       });
     }
   </script>

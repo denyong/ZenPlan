@@ -3,27 +3,34 @@ const getBaseUrl = () => {
   const DEFAULT_URL = 'http://127.0.0.1:5000/';
   let rawUrl = localStorage.getItem('calmexec_api_url');
   
+  // 1. 基本非空校验
   if (!rawUrl || typeof rawUrl !== 'string' || rawUrl.trim() === '') {
     return DEFAULT_URL;
   }
   
   let url = rawUrl.trim();
   
-  // 补全协议头
+  // 2. 补全协议头，确保符合 URL 规范
   if (!/^https?:\/\//i.test(url)) {
-    url = 'http://' + url;
+    // 处理类似 ://example.com 的非法情况
+    if (url.startsWith('://')) {
+      url = 'http' + url;
+    } else {
+      url = 'http://' + url;
+    }
   }
 
   try {
     const parsed = new URL(url);
-    // 基础校验：必须有 hostname
-    if (!parsed.hostname) return DEFAULT_URL;
+    // 基础校验：必须包含有效的 hostname
+    if (!parsed.hostname || parsed.hostname === 'null') return DEFAULT_URL;
     
     // 移除路径末尾多余的斜杠并重新添加一个，确保作为 Base URL 时表现一致
-    const cleanPath = parsed.origin + parsed.pathname.replace(/\/+$/, '');
-    return cleanPath + '/';
+    // 这样在使用 new URL(relative, base) 时表现最稳定
+    const cleanOriginAndPath = parsed.origin + parsed.pathname.replace(/\/+$/, '');
+    return cleanOriginAndPath + '/';
   } catch (e) {
-    console.warn("[CalmExec] API URL 格式非法，回退到默认地址:", url);
+    console.warn("[CalmExec] API URL 格式解析失败，回退到默认地址:", url);
     return DEFAULT_URL;
   }
 };
@@ -38,27 +45,35 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
   const token = localStorage.getItem('calmexec_token');
   const baseWithSlash = getBaseUrl();
 
-  // 1. 防御性检查：确保 endpoint 是字符串
-  const safeEndpoint = String(endpoint || '');
+  // 1. 防御性检查：确保 endpoint 是合法字符串
+  const safeEndpoint = String(endpoint || '').trim();
   
-  // 2. 规范化 Endpoint：移除开头的斜杠
+  // 2. 规范化 Endpoint：移除可能导致解析冲突的开头斜杠
   const cleanEndpoint = safeEndpoint.startsWith('/') ? safeEndpoint.slice(1) : safeEndpoint;
   
   let finalUrlObj: URL;
   try {
-    // 采用标准化的 URL 构造方式
-    // 如果 cleanEndpoint 是绝对路径（如 http://...），它会忽略 baseWithSlash
+    /**
+     * URL 构造逻辑:
+     * 如果 cleanEndpoint 是绝对路径，baseWithSlash 会被忽略。
+     * 如果 cleanEndpoint 是相对路径，会基于 baseWithSlash 进行拼接。
+     */
     finalUrlObj = new URL(cleanEndpoint, baseWithSlash);
   } catch (e) {
-    console.error("[CalmExec] 无法构造 URL。Endpoint:", cleanEndpoint, "Base:", baseWithSlash);
-    // 最后的防御：如果解析彻底失败，抛出带有诊断信息的错误，而不是让系统静默崩溃
-    throw new Error(`请求地址格式无效。请在设置中检查服务器地址配置。 (Endpoint: ${cleanEndpoint})`);
+    console.error("[CalmExec] 构造 URL 对象失败:", { endpoint: cleanEndpoint, base: baseWithSlash });
+    // 抛出带有上下文的错误，便于用户在设置页修复配置
+    throw new Error(`请求地址构造失败。请检查服务器地址配置是否正确 (当前配置: ${baseWithSlash})`);
   }
 
+  // 3. 动态添加查询参数
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        finalUrlObj.searchParams.append(key, String(value));
+        try {
+          finalUrlObj.searchParams.append(key, String(value));
+        } catch (e) {
+          console.warn(`[CalmExec] 无法添加参数 ${key}:`, value);
+        }
       }
     });
   }
@@ -121,7 +136,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
     if (err.message && err.message.includes("重新登录")) throw err;
 
     if (err.name === 'TypeError' && (err.message === 'Failed to fetch' || err.message.includes('CORS'))) {
-      const diagnosis = `连接失败。请确保后端服务在 ${baseWithSlash} 运行且允许跨域请求。`;
+      const diagnosis = `网络连接失败。请检查后端服务是否在 ${baseWithSlash} 运行，并确保其允许跨域(CORS)请求。`;
       throw new Error(diagnosis);
     }
     throw err;
